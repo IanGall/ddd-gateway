@@ -5,9 +5,9 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.5.10</version>
+        <groupId>cn.bugstack</groupId>
+        <artifactId>gateway-parent</artifactId>
+        <version>1.0-SNAPSHOT</version>
         <relativePath/>
     </parent>
 
@@ -17,16 +17,6 @@
     <name>xfg-ddd-gateway</name>
     <description>xfg ddd gateway project</description>
 
-    <properties>
-        <java.version>21</java.version>
-        <maven.compiler.release>21</maven.compiler.release>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <dubbo.version>3.3.6</dubbo.version>
-        <nacos.version>2.1.0</nacos.version>
-        <xfg.std.version>1.0-SNAPSHOT</xfg.std.version>
-        <ddd.common.version>1.0-SNAPSHOT</ddd.common.version>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -35,27 +25,22 @@
         <dependency>
             <groupId>org.apache.dubbo</groupId>
             <artifactId>dubbo</artifactId>
-            <version>${dubbo.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.dubbo</groupId>
             <artifactId>dubbo-spring-boot-starter</artifactId>
-            <version>${dubbo.version}</version>
         </dependency>
         <dependency>
             <groupId>com.alibaba.nacos</groupId>
             <artifactId>nacos-client</artifactId>
-            <version>${nacos.version}</version>
         </dependency>
         <dependency>
             <groupId>cn.bugstack</groupId>
             <artifactId>xfg-frame-archetype-std-api</artifactId>
-            <version>${xfg.std.version}</version>
         </dependency>
         <dependency>
             <groupId>cn.bugstack</groupId>
             <artifactId>ddd-common</artifactId>
-            <version>${ddd.common.version}</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
