@@ -1,0 +1,29 @@
+server:
+  port: 8092
+
+spring:
+  application:
+    name: xfg-ddd-gateway
+
+dubbo:
+  application:
+    name: xfg-ddd-gateway
+    qos-enable: false
+    metadata-type: local
+  registry:
+    address: ${DUBBO_REGISTRY_ADDRESS:nacos://127.0.0.1:8848}
+    username: ${DUBBO_REGISTRY_USERNAME:nacos}
+    password: ${DUBBO_REGISTRY_PASSWORD:Xfg@2026#Ops!Pwd}
+    use-as-config-center: false
+    use-as-metadata-center: false
+  config-center:
+    address: ${DUBBO_CONFIG_CENTER_ADDRESS:N/A}
+  protocol:
+    name: dubbo
+    port: -1
+  consumer:
+    check: false
+
+logging:
+  level:
+    root: info
