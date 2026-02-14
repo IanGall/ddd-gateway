@@ -1,8 +1,8 @@
 package cn.bugstack.gateway.controller;
 
 import cn.bugstack.api.IUserService;
-import cn.bugstack.types.common.Constants;
-import cn.bugstack.types.model.Response;
+import cn.bugstack.common.constant.Constants;
+import cn.bugstack.common.model.Response;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
