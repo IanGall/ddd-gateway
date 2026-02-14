@@ -1,7 +1,8 @@
 package cn.bugstack.gateway.controller;
 
 import cn.bugstack.api.IUserService;
-import cn.bugstack.gateway.model.UserTestResponse;
+import cn.bugstack.types.common.Constants;
+import cn.bugstack.types.model.Response;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -16,15 +17,13 @@ public class TestUserController {
     private IUserService userService;
 
     @GetMapping("/user")
-    public UserTestResponse testUser(@RequestParam(defaultValue = "test") String req) {
+    public Response<String> testUser(@RequestParam(defaultValue = "test") String req) {
         String rpcResult = userService.queryUserInfo(req);
-        return new UserTestResponse(
-                "0000",
-                "success",
-                req,
-                rpcResult,
-                System.currentTimeMillis()
-        );
+        return Response.<String>builder()
+                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .info(Constants.ResponseCode.SUCCESS.getInfo())
+                .data(rpcResult)
+                .build();
     }
 
 }
