@@ -11,7 +11,7 @@ dubbo:
     qos-enable: false
     metadata-type: local
   registry:
-    address: ${DUBBO_REGISTRY_ADDRESS:nacos://127.0.0.1:8848}
+    address: ${DUBBO_REGISTRY_ADDRESS:nacos://nacos.ixtechglobal.asia:8848}
     username: ${DUBBO_REGISTRY_USERNAME:nacos}
     password: ${DUBBO_REGISTRY_PASSWORD:Xfg@2026#Ops!Pwd}
     use-as-config-center: false
