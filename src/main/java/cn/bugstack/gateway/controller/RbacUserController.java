@@ -1,0 +1,93 @@
+package cn.bugstack.gateway.controller;
+
+import cn.bugstack.api.IRbacService;
+import cn.bugstack.api.model.rbac.CreateRbacUserReq;
+import cn.bugstack.api.model.rbac.DeleteRbacUserReq;
+import cn.bugstack.api.model.rbac.QueryRbacUserPageReq;
+import cn.bugstack.api.model.rbac.RbacUserDTO;
+import cn.bugstack.api.model.rbac.RbacUserPageDTO;
+import cn.bugstack.api.model.rbac.UpdateRbacUserReq;
+import cn.bugstack.common.model.Response;
+import cn.bugstack.gateway.model.RbacWebRequests;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
+import org.apache.dubbo.config.annotation.DubboReference;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import static cn.bugstack.gateway.model.GatewayResponses.success;
+
+@Validated
+@RestController
+@RequestMapping("/api/rbac/users")
+public class RbacUserController {
+
+    @DubboReference(version = "1.0.0", timeout = 10000, retries = 0, check = false)
+    private IRbacService rbacService;
+
+    @PostMapping
+    public Response<RbacUserDTO> createUser(@Valid @RequestBody RbacWebRequests.CreateUser request) {
+        CreateRbacUserReq rpcRequest = CreateRbacUserReq.builder()
+                .username(request.username())
+                .password(request.password())
+                .displayName(request.displayName())
+                .email(request.email())
+                .mobile(request.mobile())
+                .status(request.status())
+                .build();
+        return success(rbacService.createUser(rpcRequest));
+    }
+
+    @GetMapping("/{id}")
+    public Response<RbacUserDTO> queryUserById(@Positive(message = "用户ID必须大于0") @PathVariable("id") Long id) {
+        return success(rbacService.queryUserById(id));
+    }
+
+    @GetMapping
+    public Response<RbacUserPageDTO> queryUserPage(
+            @Min(value = 1, message = "页码必须大于0") @RequestParam(defaultValue = "1") Integer pageNum,
+            @Min(value = 1, message = "页大小必须大于0") @Max(value = 100, message = "页大小不能超过100")
+            @RequestParam(defaultValue = "20") Integer pageSize,
+            @Size(max = 64, message = "用户名长度不能超过64") @RequestParam(required = false) String username,
+            @RequestParam(required = false) Boolean status) {
+        QueryRbacUserPageReq rpcRequest = QueryRbacUserPageReq.builder()
+                .pageNum(pageNum)
+                .pageSize(pageSize)
+                .username(username)
+                .status(status)
+                .build();
+        return success(rbacService.queryUserPage(rpcRequest));
+    }
+
+    @PutMapping("/{id}")
+    public Response<RbacUserDTO> updateUser(
+            @Positive(message = "用户ID必须大于0") @PathVariable("id") Long id,
+            @Valid @RequestBody RbacWebRequests.UpdateUser request) {
+        UpdateRbacUserReq rpcRequest = UpdateRbacUserReq.builder()
+                .id(id)
+                .password(request.password())
+                .displayName(request.displayName())
+                .email(request.email())
+                .mobile(request.mobile())
+                .status(request.status())
+                .build();
+        return success(rbacService.updateUser(rpcRequest));
+    }
+
+    @DeleteMapping("/{id}")
+    public Response<Boolean> deleteUser(@Positive(message = "用户ID必须大于0") @PathVariable("id") Long id) {
+        return success(rbacService.deleteUser(DeleteRbacUserReq.builder().id(id).build()));
+    }
+
+}

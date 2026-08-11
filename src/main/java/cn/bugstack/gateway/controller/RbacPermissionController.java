@@ -1,0 +1,103 @@
+package cn.bugstack.gateway.controller;
+
+import cn.bugstack.api.IRbacService;
+import cn.bugstack.api.model.rbac.CreateRbacPermissionReq;
+import cn.bugstack.api.model.rbac.DeleteRbacPermissionReq;
+import cn.bugstack.api.model.rbac.QueryRbacPermissionPageReq;
+import cn.bugstack.api.model.rbac.RbacPermissionDTO;
+import cn.bugstack.api.model.rbac.RbacPermissionPageDTO;
+import cn.bugstack.api.model.rbac.UpdateRbacPermissionReq;
+import cn.bugstack.common.model.Response;
+import cn.bugstack.gateway.model.RbacWebRequests;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
+import org.apache.dubbo.config.annotation.DubboReference;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import static cn.bugstack.gateway.model.GatewayResponses.success;
+
+@Validated
+@RestController
+@RequestMapping("/api/rbac/permissions")
+public class RbacPermissionController {
+
+    @DubboReference(version = "1.0.0", timeout = 10000, retries = 0, check = false)
+    private IRbacService rbacService;
+
+    @PostMapping
+    public Response<RbacPermissionDTO> createPermission(@Valid @RequestBody RbacWebRequests.CreatePermission request) {
+        CreateRbacPermissionReq rpcRequest = CreateRbacPermissionReq.builder()
+                .permCode(request.permCode())
+                .permName(request.permName())
+                .permType(request.permType())
+                .parentId(request.parentId())
+                .path(request.path())
+                .method(request.method())
+                .status(request.status())
+                .build();
+        return success(rbacService.createPermission(rpcRequest));
+    }
+
+    @GetMapping("/{id}")
+    public Response<RbacPermissionDTO> queryPermissionById(
+            @Positive(message = "权限ID必须大于0") @PathVariable("id") Long id) {
+        return success(rbacService.queryPermissionById(id));
+    }
+
+    @GetMapping
+    public Response<RbacPermissionPageDTO> queryPermissionPage(
+            @Min(value = 1, message = "页码必须大于0") @RequestParam(defaultValue = "1") Integer pageNum,
+            @Min(value = 1, message = "页大小必须大于0") @Max(value = 100, message = "页大小不能超过100")
+            @RequestParam(defaultValue = "20") Integer pageSize,
+            @Size(max = 128, message = "权限编码长度不能超过128") @RequestParam(required = false) String permCode,
+            @Size(max = 128, message = "权限名称长度不能超过128") @RequestParam(required = false) String permName,
+            @RequestParam(required = false) Integer permType,
+            @RequestParam(required = false) Long parentId,
+            @RequestParam(required = false) Boolean status) {
+        QueryRbacPermissionPageReq rpcRequest = QueryRbacPermissionPageReq.builder()
+                .pageNum(pageNum)
+                .pageSize(pageSize)
+                .permCode(permCode)
+                .permName(permName)
+                .permType(permType)
+                .parentId(parentId)
+                .status(status)
+                .build();
+        return success(rbacService.queryPermissionPage(rpcRequest));
+    }
+
+    @PutMapping("/{id}")
+    public Response<RbacPermissionDTO> updatePermission(
+            @Positive(message = "权限ID必须大于0") @PathVariable("id") Long id,
+            @Valid @RequestBody RbacWebRequests.UpdatePermission request) {
+        UpdateRbacPermissionReq rpcRequest = UpdateRbacPermissionReq.builder()
+                .id(id)
+                .permCode(request.permCode())
+                .permName(request.permName())
+                .permType(request.permType())
+                .parentId(request.parentId())
+                .path(request.path())
+                .method(request.method())
+                .status(request.status())
+                .build();
+        return success(rbacService.updatePermission(rpcRequest));
+    }
+
+    @DeleteMapping("/{id}")
+    public Response<Boolean> deletePermission(@Positive(message = "权限ID必须大于0") @PathVariable("id") Long id) {
+        return success(rbacService.deletePermission(DeleteRbacPermissionReq.builder().id(id).build()));
+    }
+
+}
