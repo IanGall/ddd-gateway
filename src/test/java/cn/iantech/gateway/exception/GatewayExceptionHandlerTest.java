@@ -1,8 +1,8 @@
-package cn.bugstack.gateway.exception;
+package cn.iantech.gateway.exception;
 
-import cn.bugstack.common.constant.Constants;
-import cn.bugstack.common.exception.AppException;
-import cn.bugstack.common.model.Response;
+import cn.iantech.common.constant.Constants;
+import cn.iantech.common.exception.AppException;
+import cn.iantech.common.model.Response;
 import org.apache.dubbo.rpc.RpcException;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;

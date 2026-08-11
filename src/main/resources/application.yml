@@ -3,11 +3,11 @@ server:
 
 spring:
   application:
-    name: xfg-ddd-gateway
+    name: ian-ddd-gateway
 
 dubbo:
   application:
-    name: xfg-ddd-gateway
+    name: ian-ddd-gateway
     qos-enable: false
     metadata-type: local
   registry:

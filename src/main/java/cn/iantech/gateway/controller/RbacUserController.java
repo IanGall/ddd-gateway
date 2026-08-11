@@ -1,14 +1,14 @@
-package cn.bugstack.gateway.controller;
+package cn.iantech.gateway.controller;
 
-import cn.bugstack.api.IRbacService;
-import cn.bugstack.api.model.rbac.CreateRbacUserReq;
-import cn.bugstack.api.model.rbac.DeleteRbacUserReq;
-import cn.bugstack.api.model.rbac.QueryRbacUserPageReq;
-import cn.bugstack.api.model.rbac.RbacUserDTO;
-import cn.bugstack.api.model.rbac.RbacUserPageDTO;
-import cn.bugstack.api.model.rbac.UpdateRbacUserReq;
-import cn.bugstack.common.model.Response;
-import cn.bugstack.gateway.model.RbacWebRequests;
+import cn.iantech.api.IRbacService;
+import cn.iantech.api.model.rbac.CreateRbacUserReq;
+import cn.iantech.api.model.rbac.DeleteRbacUserReq;
+import cn.iantech.api.model.rbac.QueryRbacUserPageReq;
+import cn.iantech.api.model.rbac.RbacUserDTO;
+import cn.iantech.api.model.rbac.RbacUserPageDTO;
+import cn.iantech.api.model.rbac.UpdateRbacUserReq;
+import cn.iantech.common.model.Response;
+import cn.iantech.gateway.model.RbacWebRequests;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import static cn.bugstack.gateway.model.GatewayResponses.success;
+import static cn.iantech.gateway.model.GatewayResponses.success;
 
 @Validated
 @RestController

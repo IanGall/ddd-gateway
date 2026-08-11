@@ -1,4 +1,4 @@
-package cn.bugstack.gateway.config;
+package cn.iantech.gateway.config;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;

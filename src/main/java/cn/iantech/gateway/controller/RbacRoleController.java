@@ -1,14 +1,14 @@
-package cn.bugstack.gateway.controller;
+package cn.iantech.gateway.controller;
 
-import cn.bugstack.api.IRbacService;
-import cn.bugstack.api.model.rbac.CreateRbacRoleReq;
-import cn.bugstack.api.model.rbac.DeleteRbacRoleReq;
-import cn.bugstack.api.model.rbac.QueryRbacRolePageReq;
-import cn.bugstack.api.model.rbac.RbacRoleDTO;
-import cn.bugstack.api.model.rbac.RbacRolePageDTO;
-import cn.bugstack.api.model.rbac.UpdateRbacRoleReq;
-import cn.bugstack.common.model.Response;
-import cn.bugstack.gateway.model.RbacWebRequests;
+import cn.iantech.api.IRbacService;
+import cn.iantech.api.model.rbac.CreateRbacRoleReq;
+import cn.iantech.api.model.rbac.DeleteRbacRoleReq;
+import cn.iantech.api.model.rbac.QueryRbacRolePageReq;
+import cn.iantech.api.model.rbac.RbacRoleDTO;
+import cn.iantech.api.model.rbac.RbacRolePageDTO;
+import cn.iantech.api.model.rbac.UpdateRbacRoleReq;
+import cn.iantech.common.model.Response;
+import cn.iantech.gateway.model.RbacWebRequests;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import static cn.bugstack.gateway.model.GatewayResponses.success;
+import static cn.iantech.gateway.model.GatewayResponses.success;
 
 @Validated
 @RestController

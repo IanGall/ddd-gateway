@@ -5,17 +5,17 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>cn.bugstack</groupId>
+        <groupId>cn.iantech</groupId>
         <artifactId>gateway-parent</artifactId>
         <version>1.0-SNAPSHOT</version>
         <relativePath/>
     </parent>
 
-    <groupId>cn.bugstack</groupId>
-    <artifactId>xfg-ddd-gateway</artifactId>
+    <groupId>cn.iantech</groupId>
+    <artifactId>ian-ddd-gateway</artifactId>
     <version>1.0-SNAPSHOT</version>
-    <name>xfg-ddd-gateway</name>
-    <description>xfg ddd gateway project</description>
+    <name>ian-ddd-gateway</name>
+    <description>ian ddd gateway project</description>
 
     <dependencies>
         <dependency>
@@ -43,11 +43,11 @@
             <artifactId>nacos-client</artifactId>
         </dependency>
         <dependency>
-            <groupId>cn.bugstack</groupId>
-            <artifactId>xfg-frame-archetype-std-api</artifactId>
+            <groupId>cn.iantech</groupId>
+            <artifactId>ian-frame-archetype-std-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>cn.bugstack</groupId>
+            <groupId>cn.iantech</groupId>
             <artifactId>ddd-common</artifactId>
         </dependency>
         <dependency>
@@ -63,7 +63,7 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
-                    <mainClass>cn.bugstack.gateway.Application</mainClass>
+                    <mainClass>cn.iantech.gateway.Application</mainClass>
                 </configuration>
             </plugin>
         </plugins>

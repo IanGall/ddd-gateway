@@ -1,4 +1,4 @@
-package cn.bugstack.gateway.model;
+package cn.iantech.gateway.model;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Min;

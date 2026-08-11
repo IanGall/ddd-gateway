@@ -1,4 +1,4 @@
-# xfg-ddd-gateway
+# ian-ddd-gateway
 
 ## 启动前准备
 
@@ -13,18 +13,18 @@ export RBAC_ADMIN_USERNAME='rbac-admin'
 export RBAC_ADMIN_PASSWORD='从密钥管理系统读取'
 ```
 
-同时启动 `xfg-ddd-archetype-std` 并发布 `cn.bugstack.api.IRbacService:1.0.0`。
+同时启动 `ian-ddd-archetype-std` 并发布 `cn.iantech.api.IRbacService:1.0.0`。
 
 ## 编译
 
 ```bash
-mvn -q -DskipTests -f /Users/ianqian/IdeaProjects/ddd/xfg-ddd-gateway/pom.xml package
+mvn -q -DskipTests -f /Users/ianqian/IdeaProjects/ddd/ian-ddd-gateway/pom.xml package
 ```
 
 ## 启动
 
 ```bash
-mvn -q -f /Users/ianqian/IdeaProjects/ddd/xfg-ddd-gateway/pom.xml spring-boot:run
+mvn -q -f /Users/ianqian/IdeaProjects/ddd/ian-ddd-gateway/pom.xml spring-boot:run
 ```
 
 ## 调用示例

@@ -1,14 +1,14 @@
-package cn.bugstack.gateway.controller;
+package cn.iantech.gateway.controller;
 
-import cn.bugstack.api.IRbacService;
-import cn.bugstack.api.model.rbac.QueryRolePermissionIdsReq;
-import cn.bugstack.api.model.rbac.QueryRolePermissionIdsResp;
-import cn.bugstack.api.model.rbac.QueryUserRoleIdsReq;
-import cn.bugstack.api.model.rbac.QueryUserRoleIdsResp;
-import cn.bugstack.api.model.rbac.ReplaceRolePermissionsReq;
-import cn.bugstack.api.model.rbac.ReplaceUserRolesReq;
-import cn.bugstack.common.model.Response;
-import cn.bugstack.gateway.model.RbacWebRequests;
+import cn.iantech.api.IRbacService;
+import cn.iantech.api.model.rbac.QueryRolePermissionIdsReq;
+import cn.iantech.api.model.rbac.QueryRolePermissionIdsResp;
+import cn.iantech.api.model.rbac.QueryUserRoleIdsReq;
+import cn.iantech.api.model.rbac.QueryUserRoleIdsResp;
+import cn.iantech.api.model.rbac.ReplaceRolePermissionsReq;
+import cn.iantech.api.model.rbac.ReplaceUserRolesReq;
+import cn.iantech.common.model.Response;
+import cn.iantech.gateway.model.RbacWebRequests;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import org.apache.dubbo.config.annotation.DubboReference;
@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import static cn.bugstack.gateway.model.GatewayResponses.success;
+import static cn.iantech.gateway.model.GatewayResponses.success;
 
 @Validated
 @RestController

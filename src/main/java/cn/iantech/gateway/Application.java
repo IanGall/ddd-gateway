@@ -1,4 +1,4 @@
-package cn.bugstack.gateway;
+package cn.iantech.gateway;
 
 import org.apache.dubbo.config.spring.context.annotation.EnableDubbo;
 import org.springframework.boot.SpringApplication;

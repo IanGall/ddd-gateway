@@ -1,4 +1,4 @@
-package cn.bugstack.gateway.config;
+package cn.iantech.gateway.config;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.security.core.userdetails.UserDetails;

@@ -1,4 +1,4 @@
-# xfg-ddd-gateway 模块协作说明
+# ian-ddd-gateway 模块协作说明
 
 ## 模块定位
 - 本模块是网关应用服务，负责对外提供 HTTP 入口与基础路由能力。

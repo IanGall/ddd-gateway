@@ -1,6 +1,6 @@
-package cn.bugstack.gateway.config;
+package cn.iantech.gateway.config;
 
-import cn.bugstack.common.model.Response;
+import cn.iantech.common.model.Response;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;

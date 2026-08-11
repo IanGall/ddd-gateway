@@ -1,7 +1,7 @@
-package cn.bugstack.gateway.model;
+package cn.iantech.gateway.model;
 
-import cn.bugstack.common.constant.Constants;
-import cn.bugstack.common.model.Response;
+import cn.iantech.common.constant.Constants;
+import cn.iantech.common.model.Response;
 
 public final class GatewayResponses {
 
