@@ -4,20 +4,14 @@ server:
 spring:
   application:
     name: ian-ddd-gateway
+  profiles:
+    active: dev
 
 dubbo:
   application:
     name: ian-ddd-gateway
     qos-enable: false
     metadata-type: local
-  registry:
-    address: ${DUBBO_REGISTRY_ADDRESS}
-    username: ${DUBBO_REGISTRY_USERNAME}
-    password: ${DUBBO_REGISTRY_PASSWORD}
-    use-as-config-center: false
-    use-as-metadata-center: false
-  config-center:
-    address: ${DUBBO_CONFIG_CENTER_ADDRESS}
   protocol:
     name: dubbo
     port: -1
@@ -33,9 +27,3 @@ management:
     web:
       exposure:
         include: health
-
-gateway:
-  security:
-    admin:
-      username: ${RBAC_ADMIN_USERNAME}
-      password: ${RBAC_ADMIN_PASSWORD}

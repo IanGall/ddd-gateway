@@ -1,0 +1,13 @@
+dubbo:
+  registry:
+    address: ${DUBBO_REGISTRY_ADDRESS}
+    username: ${DUBBO_REGISTRY_USERNAME}
+    password: ${DUBBO_REGISTRY_PASSWORD}
+    use-as-config-center: false
+    use-as-metadata-center: false
+
+gateway:
+  security:
+    admin:
+      username: ${RBAC_ADMIN_USERNAME}
+      password: ${RBAC_ADMIN_PASSWORD}
