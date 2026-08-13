@@ -1,0 +1,25 @@
+server:
+  port: 8092
+
+spring:
+  application:
+    name: ${rootArtifactId}
+  profiles:
+    active: dev
+
+dubbo:
+  application:
+    name: ${rootArtifactId}
+    qos-enable: false
+    metadata-type: local
+  protocol:
+    name: tri
+    port: -1
+  consumer:
+    check: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
