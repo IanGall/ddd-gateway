@@ -4,13 +4,22 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>cn.iantech</groupId>
+    <parent>
+        <groupId>cn.iantech</groupId>
+        <artifactId>ddd-base</artifactId>
+        <version>1.0-SNAPSHOT</version>
+        <relativePath>../ddd-base/pom.xml</relativePath>
+    </parent>
+
     <artifactId>ian-ddd-gateway-parent</artifactId>
-    <version>1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>ian-ddd-gateway-parent</name>
     <description>DDD 网关参考应用与 Maven Archetype 聚合工程</description>
+
+    <properties>
+        <maven.archetype.plugin.version>3.4.1</maven.archetype.plugin.version>
+    </properties>
 
     <modules>
         <module>gateway-app</module>

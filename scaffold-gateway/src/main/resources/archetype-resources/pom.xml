@@ -45,6 +45,7 @@
         <dependency>
             <groupId>com.alibaba.nacos</groupId>
             <artifactId>nacos-client</artifactId>
+            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>cn.iantech</groupId>
