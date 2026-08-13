@@ -33,7 +33,7 @@ import static cn.iantech.gateway.model.GatewayResponses.success;
 @RequestMapping("/api/rbac/users")
 public class RbacUserController {
 
-    @DubboReference(version = "1.0.0", timeout = 10000, retries = 0, check = false)
+    @DubboReference(version = "1.0.0", protocol = "tri", timeout = 10000, retries = 0, check = false)
     private IRbacService rbacService;
 
     @PostMapping

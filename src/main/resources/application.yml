@@ -13,7 +13,7 @@ dubbo:
     qos-enable: false
     metadata-type: local
   protocol:
-    name: dubbo
+    name: tri
     port: -1
   consumer:
     check: false
