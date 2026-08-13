@@ -33,4 +33,4 @@ mvn archetype:generate \
   -DinteractiveMode=false
 ```
 
-生成工程继承 `gateway-parent`，默认包含 Spring MVC、Spring Security、参数校验、Actuator、Dubbo Triple、Nacos 和 `ddd-common`，不包含具体业务 API。
+生成工程继承 `ddd-base` 并导入 `ddd-base-bom`，默认包含 Spring MVC、Spring Security、参数校验、Actuator、Dubbo Triple、Nacos 和 `ddd-common`，不包含具体业务 API。

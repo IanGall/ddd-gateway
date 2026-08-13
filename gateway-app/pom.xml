@@ -6,9 +6,9 @@
 
     <parent>
         <groupId>cn.iantech</groupId>
-        <artifactId>gateway-parent</artifactId>
+        <artifactId>ian-ddd-gateway-parent</artifactId>
         <version>1.0-SNAPSHOT</version>
-        <relativePath/>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>ian-ddd-gateway</artifactId>

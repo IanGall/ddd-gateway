@@ -18,8 +18,27 @@
     <description>DDD 网关参考应用与 Maven Archetype 聚合工程</description>
 
     <properties>
+        <ddd.base.version>1.0-SNAPSHOT</ddd.base.version>
+        <ian.std.version>1.0-SNAPSHOT</ian.std.version>
         <maven.archetype.plugin.version>3.4.1</maven.archetype.plugin.version>
     </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>cn.iantech</groupId>
+                <artifactId>ddd-base-bom</artifactId>
+                <version>${ddd.base.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>cn.iantech</groupId>
+                <artifactId>ian-frame-archetype-std-api</artifactId>
+                <version>${ian.std.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <modules>
         <module>gateway-app</module>

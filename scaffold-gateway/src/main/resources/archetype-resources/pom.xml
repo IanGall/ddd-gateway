@@ -6,7 +6,7 @@
 
     <parent>
         <groupId>cn.iantech</groupId>
-        <artifactId>gateway-parent</artifactId>
+        <artifactId>ddd-base</artifactId>
         <version>1.0-SNAPSHOT</version>
         <relativePath/>
     </parent>
@@ -18,8 +18,21 @@
     <description>${uAppName} 通用网关</description>
 
     <properties>
+        <ddd.base.version>1.0-SNAPSHOT</ddd.base.version>
         <maven.compiler.parameters>true</maven.compiler.parameters>
     </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>cn.iantech</groupId>
+                <artifactId>ddd-base-bom</artifactId>
+                <version>${ddd.base.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
         <dependency>

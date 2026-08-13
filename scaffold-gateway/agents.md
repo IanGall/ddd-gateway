@@ -7,7 +7,7 @@
 
 ## 模板约束
 
-- 统一继承 `gateway-parent`，不得重复维护依赖版本。
+- 统一继承 `ddd-base` 并导入 `ddd-base-bom`，不得重复维护依赖版本。
 - RPC 协议统一使用 Dubbo Triple，业务契约由生成后的工程自行引入。
 - 公共模型复用 `ddd-common`，禁止引入 Hutool 或创建重复公共模块。
 - 所有环境变量占位符必须通过 Archetype 集成测试确认生成结果正确。
