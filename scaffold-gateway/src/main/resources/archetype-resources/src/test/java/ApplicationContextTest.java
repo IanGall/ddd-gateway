@@ -29,25 +29,29 @@ class ApplicationContextTest {
 
     private final HttpClient httpClient = HttpClient.newHttpClient();
 
+    // 验证生成的网关应用上下文能够成功加载
     @Test
-    void 应成功加载网关应用上下文() {
+    void shouldLoadGatewayApplicationContext() {
     }
 
+    // 验证健康检查允许匿名访问
     @Test
-    void 健康检查应允许匿名访问() throws IOException, InterruptedException {
+    void healthCheckShouldAllowAnonymousAccess() throws IOException, InterruptedException {
         HttpResponse<String> response = get("/actuator/health", null);
 
         assertEquals(200, response.statusCode());
         assertTrue(response.body().contains("UP"));
     }
 
+    // 验证业务接口拒绝匿名访问
     @Test
-    void 业务接口应拒绝匿名访问() throws IOException, InterruptedException {
+    void businessEndpointShouldRejectAnonymousAccess() throws IOException, InterruptedException {
         assertEquals(401, get("/api/status", null).statusCode());
     }
 
+    // 验证管理员能够访问业务接口
     @Test
-    void 管理员应能访问业务接口() throws IOException, InterruptedException {
+    void adminShouldAccessBusinessEndpoint() throws IOException, InterruptedException {
         String credentials = Base64.getEncoder()
                 .encodeToString("test-admin:test-password".getBytes(StandardCharsets.UTF_8));
         HttpResponse<String> response = get("/api/status", "Basic " + credentials);

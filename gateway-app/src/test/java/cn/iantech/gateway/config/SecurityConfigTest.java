@@ -9,8 +9,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class SecurityConfigTest {
 
+    // 验证管理员账号只具备 RBAC 管理员角色
     @Test
-    void 应创建仅具备Rbac管理员角色的账号() {
+    void shouldCreateAccountWithOnlyRbacAdminRole() {
         SecurityConfig config = new SecurityConfig();
         PasswordEncoder encoder = config.passwordEncoder();
         GatewaySecurityProperties properties = new GatewaySecurityProperties("admin", "secure-password");

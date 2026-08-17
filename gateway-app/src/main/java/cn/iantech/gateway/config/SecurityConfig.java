@@ -1,6 +1,7 @@
 package cn.iantech.gateway.config;
 
 import cn.iantech.common.model.Response;
+import cn.iantech.context.web.ContextWebFilter;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -15,6 +16,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import tools.jackson.databind.ObjectMapper;
 
 @Configuration
@@ -23,7 +25,8 @@ import tools.jackson.databind.ObjectMapper;
 public class SecurityConfig {
 
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http, ObjectMapper objectMapper) throws Exception {
+    SecurityFilterChain securityFilterChain(HttpSecurity http, ObjectMapper objectMapper,
+                                            ContextWebFilter contextWebFilter) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(authorize -> authorize
@@ -44,7 +47,8 @@ public class SecurityConfig {
                             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
                             objectMapper.writeValue(response.getOutputStream(), Response.<Void>builder()
                                     .code("ACCESS_DENIED").info("无权访问").build());
-                        }));
+                        }))
+                .addFilterAfter(contextWebFilter, BasicAuthenticationFilter.class);
         return http.build();
     }
 

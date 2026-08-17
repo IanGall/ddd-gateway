@@ -14,16 +14,18 @@ class GatewayExceptionHandlerTest {
 
     private final GatewayExceptionHandler handler = new GatewayExceptionHandler();
 
+    // 验证业务异常映射为 422 响应
     @Test
-    void 应将业务异常映射为422() {
+    void shouldMapBusinessExceptionToUnprocessableEntity() {
         ResponseEntity<Response<Void>> response = handler.handleAppException(new AppException("USER_EXISTS", "用户已存在"));
 
         assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, response.getStatusCode());
         assertEquals("USER_EXISTS", response.getBody().getCode());
     }
 
+    // 验证 Dubbo 超时异常映射为 504 响应
     @Test
-    void 应将Dubbo超时映射为504() {
+    void shouldMapDubboTimeoutToGatewayTimeout() {
         ResponseEntity<Response<Void>> response = handler.handleRpcException(
                 new RpcException(RpcException.TIMEOUT_EXCEPTION, "timeout"));
 
@@ -31,8 +33,9 @@ class GatewayExceptionHandlerTest {
         assertEquals("RPC_TIMEOUT", response.getBody().getCode());
     }
 
+    // 验证参数异常映射为 400 响应
     @Test
-    void 应将参数异常映射为400() {
+    void shouldMapValidationExceptionToBadRequest() {
         ResponseEntity<Response<Void>> response = handler.handleValidationException(
                 new jakarta.validation.ConstraintViolationException("参数错误", java.util.Set.of()));
 

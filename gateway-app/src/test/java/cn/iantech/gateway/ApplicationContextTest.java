@@ -16,7 +16,8 @@ import org.springframework.boot.test.context.SpringBootTest;
         })
 class ApplicationContextTest {
 
+    // 验证 Spring Boot 4 应用上下文能够成功加载
     @Test
-    void 应成功加载SpringBoot4应用上下文() {
+    void shouldLoadSpringBoot4ApplicationContext() {
     }
 }

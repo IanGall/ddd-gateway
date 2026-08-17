@@ -8,8 +8,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class GatewayStatusControllerTest {
 
+    // 验证状态接口返回当前网关状态
     @Test
-    void 应返回当前网关状态() {
+    void shouldReturnCurrentGatewayStatus() {
         Response<GatewayStatus> response = new GatewayStatusController("test-gateway").status();
 
         assertEquals("0000", response.getCode());
