@@ -1,6 +1,7 @@
 package cn.iantech.gateway;
 
-import cn.iantech.api.model.rbac.RbacAdminAuthDTO;
+import cn.iantech.api.model.rbac.RbacAccountDTO;
+import cn.iantech.api.model.rbac.RbacAuthDTO;
 import cn.iantech.context.core.ContextAccessor;
 import cn.iantech.context.core.RequestContext;
 import cn.iantech.gateway.service.GatewayRbacAuthenticator;
@@ -26,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.*;
                 "dubbo.registry.address=N/A",
                 "dubbo.config-center.address=N/A",
                 "dubbo.consumer.init=false",
-                "gateway.security.admin.tenant-id=1001"
+                "gateway.security.platform.token=test-platform-token"
         })
 @Import(ContextPropagationIntegrationTest.ContextController.class)
 class ContextPropagationIntegrationTest {
@@ -38,12 +39,21 @@ class ContextPropagationIntegrationTest {
     void stubAuthentication() {
         org.mockito.Mockito.when(authenticator.authenticate(org.mockito.ArgumentMatchers.any()))
                 .thenAnswer(invocation -> {
-                    var request = (cn.iantech.api.model.rbac.AuthenticateRbacAdminReq) invocation.getArgument(0);
+                    var request = (cn.iantech.api.model.rbac.AuthenticateRbacReq) invocation.getArgument(0);
                     return "test-password".equals(request.getPassword())
-                            ? RbacAdminAuthDTO.builder().userId(1L).tenantId(1001L).username("test-admin")
-                            .roleCodes(java.util.List.of("RBAC_ADMIN")).build()
+                            ? RbacAuthDTO.builder()
+                            .userId(9_223_372_036_854_770_002L)
+                            .accountId(9_223_372_036_854_770_001L)
+                            .username("test-user")
+                            .userType("SUB_ACCOUNT")
+                            .roleCodes(java.util.List.of("OPERATOR"))
+                            .permissionCodes(java.util.List.of("rbac:user:read"))
+                            .build()
                             : null;
                 });
+        org.mockito.Mockito.when(authenticator.createAccount(org.mockito.ArgumentMatchers.any()))
+                .thenReturn(RbacAccountDTO.builder().accountId(1001L).username("root")
+                        .loginName("root@1001.com").build());
     }
 
     @LocalServerPort
@@ -55,7 +65,7 @@ class ContextPropagationIntegrationTest {
         HttpRequest loginRequest = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + "/auth/login"))
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(
-                        "{\"username\":\"test-admin\",\"password\":\"test-password\"}"))
+                        "{\"loginName\":\"test-user@9223372036854770001.com\",\"password\":\"test-password\"}"))
                 .build();
         HttpClient client = HttpClient.newHttpClient();
         HttpResponse<String> loginResponse = client.send(loginRequest, HttpResponse.BodyHandlers.ofString());
@@ -74,11 +84,29 @@ class ContextPropagationIntegrationTest {
 
         assertEquals(200, response.statusCode());
         assertEquals("request-001", response.headers().firstValue("X-Request-Id").orElseThrow());
-        assertTrue(response.body().contains("\"principalName\":\"test-admin\""));
+        assertTrue(response.body().contains("\"principalName\":\"test-user\""));
         assertTrue(response.body().contains("\"source\":\"gateway\""));
-        assertTrue(response.body().contains("\"tenantId\":\"1001\""));
-        assertTrue(response.body().contains("\"userId\":null"));
+        assertTrue(response.body().contains("\"tenantId\":\"9223372036854770001\""));
+        assertTrue(response.body().contains("\"userId\":\"9223372036854770002\""));
         assertFalse(ContextAccessor.current().isPresent());
+    }
+
+    // 验证平台开户只能使用服务端令牌，且客户端不能指定主账号 ID
+    @Test
+    void shouldCreateAccountWithPlatformToken() throws Exception {
+        HttpRequest request = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + "/platform/accounts"))
+                .header("Content-Type", "application/json")
+                .header("X-Platform-Token", "test-platform-token")
+                .POST(HttpRequest.BodyPublishers.ofString(
+                        "{\"username\":\"root\",\"password\":\"test-password\",\"displayName\":\"根账号\"}"))
+                .build();
+
+        HttpResponse<String> response = HttpClient.newHttpClient()
+                .send(request, HttpResponse.BodyHandlers.ofString());
+
+        assertEquals(200, response.statusCode());
+        assertTrue(response.body().contains("\"accountId\":1001"));
+        assertTrue(response.body().contains("\"loginName\":\"root@1001.com\""));
     }
 
     // 验证错误凭据不会签发 Token
@@ -87,7 +115,7 @@ class ContextPropagationIntegrationTest {
         HttpRequest request = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + "/auth/login"))
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(
-                        "{\"username\":\"test-admin\",\"password\":\"wrong-password\"}"))
+                        "{\"loginName\":\"test-user@9223372036854770001.com\",\"password\":\"wrong-password\"}"))
                 .build();
 
         HttpResponse<String> response = HttpClient.newHttpClient()

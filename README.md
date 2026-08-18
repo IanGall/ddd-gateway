@@ -12,19 +12,20 @@ ian-ddd-gateway/
 
 ### 启动前准备
 
-生产环境必须通过环境变量注入注册中心和认证租户：
+生产环境必须通过环境变量注入注册中心和平台级开户令牌：
 
 ```bash
 export DUBBO_REGISTRY_ADDRESS='nacos://127.0.0.1:8848'
 export DUBBO_REGISTRY_USERNAME='nacos-user'
 export DUBBO_REGISTRY_PASSWORD='从密钥管理系统读取'
-export RBAC_ADMIN_TENANT_ID='1001'
+export PLATFORM_ADMIN_TOKEN='从密钥管理系统读取的高强度令牌'
 ```
 
 同时启动 `ian-ddd-archetype-std` 并发布 `cn.iantech.api.IRbacService:1.0.0`。
 
-网关仅信任已认证管理员与服务端配置中的 `RBAC_ADMIN_TENANT_ID`，不会采信外部 `X-Tenant-Id` 或 `X-User-Id`。Dubbo Triple
-使用明文 RPC 连接，注册中心仍使用 Nacos 用户名密码认证。
+`POST /platform/accounts` 只接受 `X-Platform-Token`，生产环境未配置 `PLATFORM_ADMIN_TOKEN` 时应用拒绝启动。登录成功后，网关只从
+Sa-Token Session 恢复主账号 ID、当前用户 ID 与本地用户名，不采信外部 `X-Tenant-Id` 或 `X-User-Id`。Dubbo Triple 使用明文
+RPC 连接，注册中心仍使用 Nacos 用户名密码认证。
 
 ### 编译与测试
 
@@ -38,12 +39,17 @@ mvn -q -f /Users/ianqian/IdeaProjects/ddd/ian-ddd-gateway/gateway-app/pom.xml te
 mvn -q -f /Users/ianqian/IdeaProjects/ddd/ian-ddd-gateway/gateway-app/pom.xml spring-boot:run
 ```
 
-### 调用示例
+### 开户与登录示例
 
 ```bash
+curl -X POST http://127.0.0.1:8092/platform/accounts \
+  -H 'Content-Type: application/json' \
+  -H "X-Platform-Token: $PLATFORM_ADMIN_TOKEN" \
+  -d '{"username":"root","password":"高强度主账号密码","displayName":"示例主账号"}'
+
 TOKEN=$(curl -s -X POST http://127.0.0.1:8092/auth/login \
   -H 'Content-Type: application/json' \
-  -d '{"username":"数据库管理员账号","password":"数据库管理员密码"}' \
+  -d '{"loginName":"root@主账号ID.com","password":"高强度主账号密码"}' \
   | jq -r '.data.token')
 curl -H "Authorization: Bearer $TOKEN" \
   "http://127.0.0.1:8092/api/rbac/users?pageNum=1&pageSize=20"
@@ -59,7 +65,8 @@ curl "http://127.0.0.1:8092/actuator/health"
 
 ## 通用网关骨架
 
-骨架只包含 Web 接入、安全认证、参数校验、统一异常、Actuator、Dubbo Triple 消费端和 Nacos 配置，不绑定 RBAC 或其他业务 API。
+骨架包含 Web 接入、安全认证、参数校验、统一异常、Actuator、Dubbo Triple 消费端和 Nacos 配置。认证契约明确绑定标准工程的
+`IRbacService`，负责主账号/子账号登录、平台级开户和可信上下文恢复；具体 RBAC 管理接口仍由业务网关自行接入，不复制到骨架中。
 
 ### 构建与安装
 

@@ -17,21 +17,16 @@ import java.util.List;
  * Sa-Token 网关路由鉴权配置。
  */
 @Configuration
-@EnableConfigurationProperties(GatewaySecurityProperties.class)
+@EnableConfigurationProperties(PlatformSecurityProperties.class)
 public class SaTokenConfig {
-
-    public static final String RBAC_ADMIN_ROLE = "RBAC_ADMIN";
 
     @Bean
     SaServletFilter saServletFilter() {
         return new SaServletFilter()
                 .addInclude("/**")
-                .addExclude("/actuator/health", "/auth/login")
-                .setAuth(request -> SaRouter.match("/api/rbac/**")
-                        .check(route -> {
-                            StpUtil.checkLogin();
-                            StpUtil.checkRole(RBAC_ADMIN_ROLE);
-                        }))
+                .addExclude("/actuator/health", "/auth/login", "/platform/accounts")
+                .setAuth(request -> SaRouter.match("/api/**")
+                        .check(route -> StpUtil.checkLogin()))
                 .setError(this::handleAuthError);
     }
 
@@ -40,7 +35,10 @@ public class SaTokenConfig {
         return new StpInterface() {
             @Override
             public List<String> getPermissionList(Object loginId, String loginType) {
-                return List.of();
+                Object permissions = StpUtil.getTokenSession().get(GatewaySessionKeys.PERMISSION_LIST);
+                return permissions instanceof List<?> permissionList
+                        ? permissionList.stream().filter(String.class::isInstance).map(String.class::cast).toList()
+                        : List.of();
             }
 
             @Override

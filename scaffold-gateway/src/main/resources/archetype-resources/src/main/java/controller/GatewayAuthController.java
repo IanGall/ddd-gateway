@@ -2,11 +2,11 @@ package ${package}.controller;
 
 import cn.dev33.satoken.session.SaSession;
 import cn.dev33.satoken.stp.StpUtil;
-import cn.iantech.api.model.rbac.AuthenticateRbacAdminReq;
-import cn.iantech.api.model.rbac.RbacAdminAuthDTO;
+import cn.iantech.api.model.rbac.AuthenticateRbacReq;
+import cn.iantech.api.model.rbac.RbacAuthDTO;
 import cn.iantech.common.exception.AppException;
 import cn.iantech.common.model.Response;
-import ${package}.config.GatewaySecurityProperties;
+import ${package}.config.GatewaySessionKeys;
 import ${package}.service.GatewayRbacAuthenticator;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -17,36 +17,38 @@ import org.springframework.web.bind.annotation.RestController;
 
 import static ${package}.model.GatewayResponses.success;
 
-/** 生成网关管理员登录接口。 */
+/** 生成网关的主账号与子账号登录接口。 */
 @RestController
 @RequestMapping("/auth")
 public class GatewayAuthController {
 
-    private final GatewaySecurityProperties properties;
     private final GatewayRbacAuthenticator authenticator;
 
-    public GatewayAuthController(GatewaySecurityProperties properties, GatewayRbacAuthenticator authenticator) {
-        this.properties = properties;
+    public GatewayAuthController(GatewayRbacAuthenticator authenticator) {
         this.authenticator = authenticator;
     }
 
     @PostMapping("/login")
     public Response<LoginToken> login(@Valid @RequestBody LoginRequest request) {
-        RbacAdminAuthDTO authenticated = authenticator.authenticate(AuthenticateRbacAdminReq.builder()
-                .tenantId(properties.tenantId())
-                .username(request.username())
+        RbacAuthDTO authenticated = authenticator.authenticate(AuthenticateRbacReq.builder()
+                .loginName(request.loginName())
                 .password(request.password())
                 .build());
-        if (authenticated == null || authenticated.getRoleCodes() == null
-                || !authenticated.getRoleCodes().contains("RBAC_ADMIN")) {
+        if (authenticated == null) {
             throw new AppException("AUTH_REQUIRED", "账号或密码错误");
         }
-        StpUtil.login(authenticated.getUsername());
-        StpUtil.getTokenSession().set(SaSession.ROLE_LIST, authenticated.getRoleCodes());
+        StpUtil.login(authenticated.getUserType() + ":" + authenticated.getUserId());
+        StpUtil.getTokenSession()
+                .set(GatewaySessionKeys.ACCOUNT_ID, authenticated.getAccountId().toString())
+                .set(GatewaySessionKeys.USER_ID, authenticated.getUserId().toString())
+                .set(GatewaySessionKeys.USERNAME, authenticated.getUsername())
+                .set(GatewaySessionKeys.USER_TYPE, authenticated.getUserType())
+                .set(SaSession.ROLE_LIST, authenticated.getRoleCodes())
+                .set(GatewaySessionKeys.PERMISSION_LIST, authenticated.getPermissionCodes());
         return success(new LoginToken(StpUtil.getTokenValue()));
     }
 
-    public record LoginRequest(@NotBlank String username, @NotBlank String password) {
+    public record LoginRequest(@NotBlank String loginName, @NotBlank String password) {
     }
 
     public record LoginToken(String token) {

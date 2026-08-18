@@ -4,6 +4,7 @@
 - 下游调用使用 Dubbo Triple，消费端默认关闭启动检查。
 - 传输对象必须定义明确的 Java 类型，不使用 Map。
 - 生产环境凭据只能通过环境变量注入，禁止提交真实密钥。
-- `GATEWAY_ADMIN_TENANT_ID` 必须由认证上下文解析器建立，禁止信任外部租户 Header。
+- 主账号边界和当前用户身份必须由认证上下文解析器从 Token Session 恢复，禁止信任外部身份 Header。
+- `PLATFORM_ADMIN_TOKEN` 仅用于平台创建主账号，禁止进入租户 RBAC 权限体系。
 - Dubbo Triple 消费端使用明文 RPC，注册中心凭据通过环境变量注入。
 - 新增代码和注释使用中文，优先复用 `ddd-common`。

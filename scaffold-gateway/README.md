@@ -33,8 +33,8 @@ mvn archetype:generate \
   -DinteractiveMode=false
 ```
 
-生成工程继承 `ddd-base` 并导入 `ddd-base-bom`，默认包含 Spring MVC、Sa-Token、参数校验、Actuator、Dubbo Triple、Nacos 和
-`ddd-common`，不包含具体业务 API。
+生成工程继承 `ddd-base` 并导入 `ddd-base-bom`，默认包含 Spring MVC、Sa-Token、参数校验、Actuator、Dubbo Triple、Nacos、
+`ddd-common` 和标准工程 `IRbacService` 认证契约。骨架不复制具体 RBAC 管理接口。
 
-生成工程的管理员租户通过 `GATEWAY_ADMIN_TENANT_ID` 配置；Dubbo 消费端使用明文 Triple，注册中心通过
-`DUBBO_REGISTRY_USERNAME` 和 `DUBBO_REGISTRY_PASSWORD` 认证。
+生产环境通过 `PLATFORM_ADMIN_TOKEN` 保护主账号创建接口；租户边界来自认证后的主账号 ID，不再使用固定租户配置。Dubbo 消费端使用
+明文 Triple，注册中心通过 `DUBBO_REGISTRY_USERNAME` 和 `DUBBO_REGISTRY_PASSWORD` 认证。

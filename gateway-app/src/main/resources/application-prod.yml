@@ -11,5 +11,5 @@ dubbo:
 
 gateway:
   security:
-    admin:
-      tenant-id: ${RBAC_ADMIN_TENANT_ID}
+    platform:
+      token: ${PLATFORM_ADMIN_TOKEN}

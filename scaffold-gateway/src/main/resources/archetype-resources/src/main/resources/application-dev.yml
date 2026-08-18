@@ -12,5 +12,5 @@ dubbo:
 
 gateway:
   security:
-    admin:
-      tenant-id: ${symbol_dollar}{GATEWAY_ADMIN_TENANT_ID:1}
+    platform:
+      token: ${symbol_dollar}{PLATFORM_ADMIN_TOKEN:dev-platform-token-change-me}

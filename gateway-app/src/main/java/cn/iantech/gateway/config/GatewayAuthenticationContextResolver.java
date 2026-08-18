@@ -1,27 +1,33 @@
 package cn.iantech.gateway.config;
 
+import cn.dev33.satoken.session.SaSession;
+import cn.dev33.satoken.stp.StpUtil;
 import cn.iantech.context.web.AuthenticationContextResolver;
 import cn.iantech.context.web.ResolvedAuthenticationContext;
 import org.springframework.stereotype.Component;
 
 /**
- * 将 Sa-Token 已认证身份映射为配置租户上下文。
+ * 从 Sa-Token 可信会话恢复主账号边界和当前用户身份。
  */
 @Component
 public final class GatewayAuthenticationContextResolver implements AuthenticationContextResolver {
-
-    private final GatewaySecurityProperties properties;
-
-    public GatewayAuthenticationContextResolver(GatewaySecurityProperties properties) {
-        this.properties = properties;
-    }
 
     @Override
     public ResolvedAuthenticationContext resolve(String loginId) {
         if (loginId == null || loginId.isBlank()) {
             return ResolvedAuthenticationContext.empty();
         }
-        return new ResolvedAuthenticationContext(loginId,
-                properties.tenantId().toString(), null);
+        SaSession session = StpUtil.getTokenSession();
+        String accountId = session.getString(GatewaySessionKeys.ACCOUNT_ID);
+        String userId = session.getString(GatewaySessionKeys.USER_ID);
+        String username = session.getString(GatewaySessionKeys.USERNAME);
+        if (isBlank(accountId) || isBlank(userId) || isBlank(username)) {
+            return ResolvedAuthenticationContext.empty();
+        }
+        return new ResolvedAuthenticationContext(username, accountId, userId);
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.isBlank();
     }
 }

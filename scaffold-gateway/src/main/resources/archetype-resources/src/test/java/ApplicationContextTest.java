@@ -1,6 +1,6 @@
 package ${package};
 
-import cn.iantech.api.model.rbac.RbacAdminAuthDTO;
+import cn.iantech.api.model.rbac.RbacAuthDTO;
 import ${package}.service.GatewayRbacAuthenticator;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
         "dubbo.registry.address=N/A",
         "dubbo.config-center.address=N/A",
         "dubbo.consumer.init=false",
-        "gateway.security.admin.tenant-id=1001"
+        "gateway.security.platform.token=test-platform-token"
 })
 class ApplicationContextTest {
 
@@ -33,8 +33,9 @@ class ApplicationContextTest {
     @org.junit.jupiter.api.BeforeEach
     void stubAuthentication() {
         org.mockito.Mockito.when(authenticator.authenticate(org.mockito.ArgumentMatchers.any()))
-                .thenReturn(RbacAdminAuthDTO.builder().userId(1L).tenantId(1001L).username("test-admin")
-                        .roleCodes(java.util.List.of("RBAC_ADMIN")).build());
+                .thenReturn(RbacAuthDTO.builder().userId(1001L).accountId(1001L).username("root")
+                        .userType("ROOT_ACCOUNT").roleCodes(java.util.List.of())
+                        .permissionCodes(java.util.List.of("*")).build());
     }
 
     @LocalServerPort
@@ -62,13 +63,13 @@ class ApplicationContextTest {
         assertEquals(401, get("/api/status", null).statusCode());
     }
 
-    // 验证管理员能够访问业务接口
+    // 验证主账号能够访问业务接口
     @Test
-    void adminShouldAccessBusinessEndpoint() throws IOException, InterruptedException {
+    void accountShouldAccessBusinessEndpoint() throws IOException, InterruptedException {
         HttpRequest loginRequest = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + "/auth/login"))
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(
-                        "{\"username\":\"test-admin\",\"password\":\"test-password\"}"))
+                        "{\"loginName\":\"root@1001.com\",\"password\":\"test-password\"}"))
                 .build();
         HttpResponse<String> loginResponse = httpClient.send(loginRequest, HttpResponse.BodyHandlers.ofString());
         String token = Pattern.compile("\\\"token\\\":\\\"([^\\\"]+)\\\"")
