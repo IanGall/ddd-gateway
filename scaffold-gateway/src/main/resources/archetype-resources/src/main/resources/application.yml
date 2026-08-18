@@ -12,14 +12,23 @@ dubbo:
     name: ${rootArtifactId}
     qos-enable: false
     metadata-type: local
-  protocol:
-    name: tri
-    port: -1
+    metadata-service-protocol: injvm
   consumer:
     check: false
+
+  metrics:
+    export-metrics-service: false
 
 management:
   endpoints:
     web:
       exposure:
         include: health
+
+sa-token:
+  token-name: Authorization
+  token-prefix: Bearer
+  is-read-header: true
+  is-read-cookie: false
+  is-read-body: false
+  is-read-param: false

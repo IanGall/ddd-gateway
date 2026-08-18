@@ -1,21 +1,24 @@
 package cn.iantech.gateway.exception;
 
+import cn.dev33.satoken.exception.NotLoginException;
+import cn.dev33.satoken.exception.NotPermissionException;
+import cn.dev33.satoken.exception.NotRoleException;
 import cn.iantech.common.constant.Constants;
 import cn.iantech.common.exception.AppException;
 import cn.iantech.common.model.Response;
 import jakarta.validation.ConstraintViolationException;
 import org.apache.dubbo.rpc.RpcException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
-import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.http.converter.HttpMessageNotReadableException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -28,7 +31,24 @@ public class GatewayExceptionHandler {
     @ExceptionHandler(AppException.class)
     public ResponseEntity<Response<Void>> handleAppException(AppException exception) {
         String message = Objects.requireNonNullElse(exception.getInfo(), Constants.ResponseCode.UN_ERROR.getInfo());
+        if ("AUTH_REQUIRED".equals(exception.getCode())) {
+            return response(HttpStatus.UNAUTHORIZED, exception.getCode(), message);
+        }
+        if (Constants.ResponseCode.ACCESS_DENIED.getCode().equals(exception.getCode())
+                || "ACCESS_DENIED".equals(exception.getCode())) {
+            return response(HttpStatus.FORBIDDEN, exception.getCode(), message);
+        }
         return response(HttpStatus.UNPROCESSABLE_ENTITY, exception.getCode(), message);
+    }
+
+    @ExceptionHandler(NotLoginException.class)
+    public ResponseEntity<Response<Void>> handleNotLoginException(NotLoginException exception) {
+        return response(HttpStatus.UNAUTHORIZED, "AUTH_REQUIRED", "需要认证");
+    }
+
+    @ExceptionHandler({NotRoleException.class, NotPermissionException.class})
+    public ResponseEntity<Response<Void>> handleAccessDeniedException(Exception exception) {
+        return response(HttpStatus.FORBIDDEN, "ACCESS_DENIED", "无权访问");
     }
 
     @ExceptionHandler({MethodArgumentNotValidException.class, ConstraintViolationException.class,
@@ -47,7 +67,7 @@ public class GatewayExceptionHandler {
     @ExceptionHandler(RpcException.class)
     public ResponseEntity<Response<Void>> handleRpcException(RpcException exception) {
         log.warn("网关调用下游 RPC 失败: timeout={}, noInvoker={}", exception.isTimeout(),
-                exception.isNoInvokerAvailableAfterFilter(), exception);
+                exception.isNoInvokerAvailableAfterFilter());
         if (exception.isTimeout()) {
             return response(HttpStatus.GATEWAY_TIMEOUT, "RPC_TIMEOUT", "下游服务调用超时");
         }

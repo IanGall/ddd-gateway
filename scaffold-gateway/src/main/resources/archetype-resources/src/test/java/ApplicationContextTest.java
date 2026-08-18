@@ -1,16 +1,20 @@
 package ${package};
 
+import cn.iantech.api.model.rbac.RbacAdminAuthDTO;
+import ${package}.service.GatewayRbacAuthenticator;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
+import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -19,10 +23,19 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
         "dubbo.registry.address=N/A",
         "dubbo.config-center.address=N/A",
         "dubbo.consumer.init=false",
-        "gateway.security.admin.username=test-admin",
-        "gateway.security.admin.password=test-password"
+        "gateway.security.admin.tenant-id=1001"
 })
 class ApplicationContextTest {
+
+    @MockitoBean
+    private GatewayRbacAuthenticator authenticator;
+
+    @org.junit.jupiter.api.BeforeEach
+    void stubAuthentication() {
+        org.mockito.Mockito.when(authenticator.authenticate(org.mockito.ArgumentMatchers.any()))
+                .thenReturn(RbacAdminAuthDTO.builder().userId(1L).tenantId(1001L).username("test-admin")
+                        .roleCodes(java.util.List.of("RBAC_ADMIN")).build());
+    }
 
     @LocalServerPort
     private int port;
@@ -52,18 +65,24 @@ class ApplicationContextTest {
     // 验证管理员能够访问业务接口
     @Test
     void adminShouldAccessBusinessEndpoint() throws IOException, InterruptedException {
-        String credentials = Base64.getEncoder()
-                .encodeToString("test-admin:test-password".getBytes(StandardCharsets.UTF_8));
-        HttpResponse<String> response = get("/api/status", "Basic " + credentials);
+        HttpRequest loginRequest = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + "/auth/login"))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(
+                        "{\"username\":\"test-admin\",\"password\":\"test-password\"}"))
+                .build();
+        HttpResponse<String> loginResponse = httpClient.send(loginRequest, HttpResponse.BodyHandlers.ofString());
+        String token = Pattern.compile("\\\"token\\\":\\\"([^\\\"]+)\\\"")
+                .matcher(loginResponse.body()).results().findFirst().orElseThrow().group(1);
+        HttpResponse<String> response = get("/api/status", token);
 
         assertEquals(200, response.statusCode());
         assertTrue(response.body().contains("${rootArtifactId}"));
     }
 
-    private HttpResponse<String> get(String path, String authorization) throws IOException, InterruptedException {
+    private HttpResponse<String> get(String path, String token) throws IOException, InterruptedException {
         HttpRequest.Builder request = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + path)).GET();
-        if (authorization != null) {
-            request.header("Authorization", authorization);
+        if (token != null) {
+            request.header("Authorization", "Bearer " + token);
         }
         return httpClient.send(request.build(), HttpResponse.BodyHandlers.ofString());
     }

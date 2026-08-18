@@ -1,4 +1,7 @@
 dubbo:
+  consumer:
+    parameters:
+      ssl-enabled: false
   registry:
     address: ${DUBBO_REGISTRY_ADDRESS:nacos://127.0.0.1:8848}
     username: ${DUBBO_REGISTRY_USERNAME:nacos}
@@ -9,5 +12,4 @@ dubbo:
 gateway:
   security:
     admin:
-      username: ${RBAC_ADMIN_USERNAME:rbac-admin}
-      password: ${RBAC_ADMIN_PASSWORD:Ian2026OpsPwd}
+      tenant-id: ${RBAC_ADMIN_TENANT_ID:1}

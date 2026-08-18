@@ -11,8 +11,7 @@ import org.springframework.boot.test.context.SpringBootTest;
                 "dubbo.registry.password=test-password",
                 "dubbo.config-center.address=N/A",
                 "dubbo.consumer.init=false",
-                "gateway.security.admin.username=test-admin",
-                "gateway.security.admin.password=test-password"
+                "gateway.security.admin.tenant-id=1001"
         })
 class ApplicationContextTest {
 

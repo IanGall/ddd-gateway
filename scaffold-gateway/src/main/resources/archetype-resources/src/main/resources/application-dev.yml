@@ -1,5 +1,8 @@
 #set( $symbol_dollar = '$' )
 dubbo:
+  consumer:
+    parameters:
+      ssl-enabled: false
   registry:
     address: ${symbol_dollar}{DUBBO_REGISTRY_ADDRESS:nacos://127.0.0.1:8848}
     username: ${symbol_dollar}{DUBBO_REGISTRY_USERNAME:nacos}
@@ -10,5 +13,4 @@ dubbo:
 gateway:
   security:
     admin:
-      username: ${symbol_dollar}{GATEWAY_ADMIN_USERNAME:gateway-admin}
-      password: ${symbol_dollar}{GATEWAY_ADMIN_PASSWORD:change-me-now}
+      tenant-id: ${symbol_dollar}{GATEWAY_ADMIN_TENANT_ID:1}

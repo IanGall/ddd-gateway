@@ -1,5 +1,8 @@
 #set( $symbol_dollar = '$' )
 dubbo:
+  consumer:
+    parameters:
+      ssl-enabled: false
   registry:
     address: ${symbol_dollar}{DUBBO_REGISTRY_ADDRESS}
     username: ${symbol_dollar}{DUBBO_REGISTRY_USERNAME}
@@ -10,5 +13,4 @@ dubbo:
 gateway:
   security:
     admin:
-      username: ${symbol_dollar}{GATEWAY_ADMIN_USERNAME}
-      password: ${symbol_dollar}{GATEWAY_ADMIN_PASSWORD}
+      tenant-id: ${symbol_dollar}{GATEWAY_ADMIN_TENANT_ID}

@@ -1,4 +1,7 @@
 dubbo:
+  consumer:
+    parameters:
+      ssl-enabled: false
   registry:
     address: ${DUBBO_REGISTRY_ADDRESS}
     username: ${DUBBO_REGISTRY_USERNAME}
@@ -9,5 +12,4 @@ dubbo:
 gateway:
   security:
     admin:
-      username: ${RBAC_ADMIN_USERNAME}
-      password: ${RBAC_ADMIN_PASSWORD}
+      tenant-id: ${RBAC_ADMIN_TENANT_ID}

@@ -23,6 +23,16 @@ class GatewayExceptionHandlerTest {
         assertEquals("USER_EXISTS", response.getBody().getCode());
     }
 
+    // 验证授权拒绝映射为 403 响应
+    @Test
+    void shouldMapAccessDeniedToForbidden() {
+        ResponseEntity<Response<Void>> response = handler.handleAppException(
+                new AppException(Constants.ResponseCode.ACCESS_DENIED.getCode(), "无权访问"));
+
+        assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+        assertEquals(Constants.ResponseCode.ACCESS_DENIED.getCode(), response.getBody().getCode());
+    }
+
     // 验证 Dubbo 超时异常映射为 504 响应
     @Test
     void shouldMapDubboTimeoutToGatewayTimeout() {
@@ -31,6 +41,17 @@ class GatewayExceptionHandlerTest {
 
         assertEquals(HttpStatus.GATEWAY_TIMEOUT, response.getStatusCode());
         assertEquals("RPC_TIMEOUT", response.getBody().getCode());
+    }
+
+    // 验证普通 Dubbo 调用失败映射为 502 响应
+    @Test
+    void shouldMapDubboFailureToBadGateway() {
+        ResponseEntity<Response<Void>> response = handler.handleRpcException(
+                new RpcException(RpcException.NETWORK_EXCEPTION, "下游连接失败"));
+
+        assertEquals(HttpStatus.BAD_GATEWAY, response.getStatusCode());
+        assertEquals("RPC_ERROR", response.getBody().getCode());
+        assertEquals("下游服务调用失败", response.getBody().getInfo());
     }
 
     // 验证参数异常映射为 400 响应

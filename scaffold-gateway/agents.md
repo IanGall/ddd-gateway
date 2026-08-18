@@ -11,6 +11,7 @@
 - RPC 协议统一使用 Dubbo Triple，业务契约由生成后的工程自行引入。
 - 公共模型复用 `ddd-common`，禁止引入 Hutool 或创建重复公共模块。
 - 所有环境变量占位符必须通过 Archetype 集成测试确认生成结果正确。
+- 生成工程的租户配置使用 `GATEWAY_ADMIN_TENANT_ID`；Dubbo Triple 使用明文 RPC，注册中心凭据仍通过环境变量注入。
 
 ## 提交前检查
 

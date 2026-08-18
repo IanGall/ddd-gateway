@@ -12,7 +12,7 @@ cn.iantech:scaffold-gateway:1.0-SNAPSHOT
 mvn clean verify
 ```
 
-该命令会生成测试网关工程，并执行生成工程的编译、上下文测试和 HTTP 安全链路测试。
+该命令会生成测试网关工程，并执行生成工程的编译、上下文测试、HTTP 安全链路测试和 RPC 异常映射测试。
 
 ## 安装与使用
 
@@ -33,4 +33,8 @@ mvn archetype:generate \
   -DinteractiveMode=false
 ```
 
-生成工程继承 `ddd-base` 并导入 `ddd-base-bom`，默认包含 Spring MVC、Spring Security、参数校验、Actuator、Dubbo Triple、Nacos 和 `ddd-common`，不包含具体业务 API。
+生成工程继承 `ddd-base` 并导入 `ddd-base-bom`，默认包含 Spring MVC、Sa-Token、参数校验、Actuator、Dubbo Triple、Nacos 和
+`ddd-common`，不包含具体业务 API。
+
+生成工程的管理员租户通过 `GATEWAY_ADMIN_TENANT_ID` 配置；Dubbo 消费端使用明文 Triple，注册中心通过
+`DUBBO_REGISTRY_USERNAME` 和 `DUBBO_REGISTRY_PASSWORD` 认证。

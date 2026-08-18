@@ -19,6 +19,7 @@
 
     <properties>
         <ddd.base.version>1.0-SNAPSHOT</ddd.base.version>
+        <ian.std.version>1.0-SNAPSHOT</ian.std.version>
         <maven.compiler.parameters>true</maven.compiler.parameters>
     </properties>
 
@@ -40,8 +41,8 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-security</artifactId>
+            <groupId>cn.dev33</groupId>
+            <artifactId>sa-token-spring-boot4-starter</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -63,6 +64,11 @@
         <dependency>
             <groupId>cn.iantech</groupId>
             <artifactId>ddd-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>cn.iantech</groupId>
+            <artifactId>ian-frame-archetype-std-api</artifactId>
+            <version>${ian.std.version}</version>
         </dependency>
         <dependency>
             <groupId>cn.iantech</groupId>
