@@ -5,14 +5,11 @@ import cn.dev33.satoken.dao.SaTokenDaoForRedisson;
 import cn.iantech.gateway.service.InMemoryRefreshSessionStore;
 import cn.iantech.gateway.service.RedisRefreshSessionStore;
 import cn.iantech.gateway.service.RefreshSessionStore;
-import org.redisson.Redisson;
 import org.redisson.api.RedissonClient;
-import org.redisson.config.Config;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.util.StringUtils;
 
 /**
  * 网关认证会话存储配置。
@@ -21,26 +18,11 @@ import org.springframework.util.StringUtils;
 @EnableConfigurationProperties(GatewayTokenProperties.class)
 public class GatewayTokenConfiguration {
 
-    @Bean(destroyMethod = "shutdown")
-    @ConditionalOnProperty(prefix = "gateway.security.session", name = "redis-enabled", havingValue = "true",
-            matchIfMissing = true)
-    RedissonClient gatewayRedissonClient(GatewayTokenProperties properties) {
-        validate(properties);
-        GatewayTokenProperties.Redis redis = properties.getRedis();
-        Config config = new Config();
-        var singleServer = config.useSingleServer()
-                .setAddress(redis.getAddress())
-                .setDatabase(redis.getDatabase());
-        if (StringUtils.hasText(redis.getPassword())) {
-            singleServer.setPassword(redis.getPassword());
-        }
-        return Redisson.create(config);
-    }
-
     @Bean
     @ConditionalOnProperty(prefix = "gateway.security.session", name = "redis-enabled", havingValue = "true",
             matchIfMissing = true)
-    SaTokenDao saTokenDao(RedissonClient redissonClient) {
+    SaTokenDao saTokenDao(RedissonClient redissonClient, GatewayTokenProperties properties) {
+        validate(properties);
         return new SaTokenDaoForRedisson(redissonClient);
     }
 
@@ -61,11 +43,6 @@ public class GatewayTokenConfiguration {
     private void validate(GatewayTokenProperties properties) {
         if (properties.getAccessTokenTimeout() <= 0 || properties.getRefreshTokenTimeout() <= 0) {
             throw new IllegalStateException("访问令牌和刷新令牌有效期必须大于零");
-        }
-        String address = properties.getRedis().getAddress();
-        if (!StringUtils.hasText(address)
-                || !(address.startsWith("redis://") || address.startsWith("rediss://"))) {
-            throw new IllegalStateException("启用认证共享会话时必须配置合法的 Redis 地址");
         }
     }
 }

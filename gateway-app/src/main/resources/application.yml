@@ -6,6 +6,12 @@ spring:
     name: ian-ddd-gateway
   profiles:
     active: dev
+  data:
+    redis:
+      host: ${REDIS_HOST:127.0.0.1}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:Ian2026OpsPwd}
+      database: ${REDIS_DATABASE:0}
 
 dubbo:
   application:
@@ -44,10 +50,6 @@ gateway:
   security:
     session:
       # 开发和生产环境均使用共享会话；测试可通过属性显式切换到内存实现。
-      redis-enabled: ${AUTH_REDIS_ENABLED:true}
+      redis-enabled: true
       access-token-timeout: 900
       refresh-token-timeout: 2592000
-      redis:
-        address: ${AUTH_REDIS_ADDRESS:redis://127.0.0.1:6379}
-        password: ${AUTH_REDIS_PASSWORD:}
-        database: ${AUTH_REDIS_DATABASE:0}

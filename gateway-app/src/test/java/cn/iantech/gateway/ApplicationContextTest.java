@@ -12,6 +12,7 @@ import org.springframework.boot.test.context.SpringBootTest;
                 "dubbo.config-center.address=N/A",
                 "dubbo.consumer.init=false",
                 "gateway.security.session.redis-enabled=false",
+                "spring.autoconfigure.exclude=org.redisson.spring.starter.RedissonAutoConfigurationV2,org.redisson.spring.starter.RedissonAutoConfigurationV4",
                 "gateway.security.platform.token=test-platform-token"
         })
 class ApplicationContextTest {

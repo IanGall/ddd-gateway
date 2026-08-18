@@ -19,13 +19,15 @@ export DUBBO_REGISTRY_ADDRESS='nacos://127.0.0.1:8848'
 export DUBBO_REGISTRY_USERNAME='nacos-user'
 export DUBBO_REGISTRY_PASSWORD='从密钥管理系统读取'
 export PLATFORM_ADMIN_TOKEN='从密钥管理系统读取的高强度令牌'
-export AUTH_REDIS_ADDRESS='redis://redis.example.internal:6379'
-export AUTH_REDIS_PASSWORD='从密钥管理系统读取'
+export REDIS_HOST='redis.example.internal'
+export REDIS_PORT='6379'
+export REDIS_PASSWORD='从密钥管理系统读取'
 ```
 
 同时启动 `ian-ddd-archetype-std` 并发布 `cn.iantech.api.IRbacService:1.0.0`。
 
-默认、开发和生产 profile 均启用 Redis 共享会话；必须保证 Redis 可连接并配置 `AUTH_REDIS_ADDRESS`。 仅测试场景通过测试属性显式关闭
+默认、开发和生产 profile 均启用 Redis 共享会话；必须保证 Redis 可连接并配置 `REDIS_HOST`、`REDIS_PORT`、`REDIS_PASSWORD`
+。仅测试场景通过测试属性显式关闭
 Redis，生产运行路径不提供内存降级。
 
 `POST /platform/accounts` 只接受 `X-Platform-Token`，生产环境未配置 `PLATFORM_ADMIN_TOKEN` 时应用拒绝启动。登录成功后，网关只从

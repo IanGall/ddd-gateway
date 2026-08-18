@@ -8,7 +8,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "gateway.security.session")
 public class GatewayTokenProperties {
 
-    private final Redis redis = new Redis();
     private boolean redisEnabled = true;
     private long accessTokenTimeout = 900;
     private long refreshTokenTimeout = 2_592_000;
@@ -37,38 +36,4 @@ public class GatewayTokenProperties {
         this.refreshTokenTimeout = refreshTokenTimeout;
     }
 
-    public Redis getRedis() {
-        return redis;
-    }
-
-    public static final class Redis {
-
-        private String address;
-        private String password;
-        private int database;
-
-        public String getAddress() {
-            return address;
-        }
-
-        public void setAddress(String address) {
-            this.address = address;
-        }
-
-        public String getPassword() {
-            return password;
-        }
-
-        public void setPassword(String password) {
-            this.password = password;
-        }
-
-        public int getDatabase() {
-            return database;
-        }
-
-        public void setDatabase(int database) {
-            this.database = database;
-        }
-    }
 }
