@@ -30,7 +30,8 @@ public class GatewayExceptionHandler {
 
     @ExceptionHandler(AppException.class)
     public ResponseEntity<Response<Void>> handleAppException(AppException exception) {
-        if ("AUTH_REQUIRED".equals(exception.getCode())) {
+        if ("AUTH_REQUIRED".equals(exception.getCode())
+                || "REFRESH_TOKEN_REUSED".equals(exception.getCode())) {
             return response(HttpStatus.UNAUTHORIZED, exception.getCode(),
                     Objects.requireNonNullElse(exception.getInfo(), "需要认证"));
         }

@@ -31,7 +31,7 @@ public class GatewayExceptionHandler {
     @ExceptionHandler(AppException.class)
     public ResponseEntity<Response<Void>> handleAppException(AppException exception) {
         String message = Objects.requireNonNullElse(exception.getInfo(), Constants.ResponseCode.UN_ERROR.getInfo());
-        if ("AUTH_REQUIRED".equals(exception.getCode())) {
+        if ("AUTH_REQUIRED".equals(exception.getCode()) || exception.getCode().startsWith("AUTH_REFRESH")) {
             return response(HttpStatus.UNAUTHORIZED, exception.getCode(), message);
         }
         if (Constants.ResponseCode.ACCESS_DENIED.getCode().equals(exception.getCode())

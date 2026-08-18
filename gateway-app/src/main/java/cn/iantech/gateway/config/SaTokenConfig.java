@@ -24,9 +24,12 @@ public class SaTokenConfig {
     SaServletFilter saServletFilter() {
         return new SaServletFilter()
                 .addInclude("/**")
-                .addExclude("/actuator/health", "/auth/login", "/platform/accounts")
-                .setAuth(request -> SaRouter.match("/api/**")
-                        .check(route -> StpUtil.checkLogin()))
+                .addExclude("/actuator/health", "/auth/login", "/auth/refresh", "/platform/accounts")
+                .setAuth(request -> {
+                    SaRouter.match("/api/**").check(route -> StpUtil.checkLogin());
+                    SaRouter.match("/auth/logout", "/auth/logout-all", "/auth/sessions", "/auth/sessions/**")
+                            .check(route -> StpUtil.checkLogin());
+                })
                 .setError(this::handleAuthError);
     }
 

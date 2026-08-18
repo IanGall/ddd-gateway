@@ -5,6 +5,7 @@ import cn.iantech.api.model.rbac.AuthenticateRbacReq;
 import cn.iantech.api.model.rbac.CreateRbacAccountReq;
 import cn.iantech.api.model.rbac.RbacAccountDTO;
 import cn.iantech.api.model.rbac.RbacAuthDTO;
+import cn.iantech.api.model.rbac.ReloadRbacAuthReq;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.stereotype.Component;
 
@@ -17,6 +18,10 @@ public class GatewayRbacAuthenticator {
 
     public RbacAuthDTO authenticate(AuthenticateRbacReq request) {
         return rbacService.authenticate(request);
+    }
+
+    public RbacAuthDTO reloadAuthentication(ReloadRbacAuthReq request) {
+        return rbacService.reloadAuthentication(request);
     }
 
     public RbacAccountDTO createAccount(CreateRbacAccountReq request) {

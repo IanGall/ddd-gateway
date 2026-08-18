@@ -1,4 +1,11 @@
 #set( $symbol_dollar = '$' )
+spring:
+  data:
+    redis:
+      host: ${symbol_dollar}{REDIS_HOST:127.0.0.1}
+      port: ${symbol_dollar}{REDIS_PORT:6379}
+      password: ${symbol_dollar}{REDIS_PASSWORD:}
+
 dubbo:
   consumer:
     parameters:
@@ -12,5 +19,8 @@ dubbo:
 
 gateway:
   security:
+    session:
+      # 开发环境允许无 Redis 启动；生产环境由 application-prod.yml 强制启用共享会话。
+      redis-enabled: false
     platform:
       token: ${symbol_dollar}{PLATFORM_ADMIN_TOKEN:dev-platform-token-change-me}

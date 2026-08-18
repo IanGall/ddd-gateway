@@ -11,5 +11,11 @@ dubbo:
 
 gateway:
   security:
+    session:
+      redis-enabled: true
+      redis:
+        address: ${AUTH_REDIS_ADDRESS}
+        password: ${AUTH_REDIS_PASSWORD:}
+        database: ${AUTH_REDIS_DATABASE:0}
     platform:
       token: ${PLATFORM_ADMIN_TOKEN}

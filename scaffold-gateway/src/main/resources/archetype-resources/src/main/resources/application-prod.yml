@@ -1,4 +1,11 @@
 #set( $symbol_dollar = '$' )
+spring:
+  data:
+    redis:
+      host: ${symbol_dollar}{REDIS_HOST}
+      port: ${symbol_dollar}{REDIS_PORT:6379}
+      password: ${symbol_dollar}{REDIS_PASSWORD:}
+
 dubbo:
   consumer:
     parameters:

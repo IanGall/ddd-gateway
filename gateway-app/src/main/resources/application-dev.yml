@@ -11,5 +11,8 @@ dubbo:
 
 gateway:
   security:
+    session:
+      # 开发环境使用 Redis 共享会话，启动前必须保证 Redis 可连接。
+      redis-enabled: ${AUTH_REDIS_ENABLED:true}
     platform:
       token: ${PLATFORM_ADMIN_TOKEN:dev-platform-token-change-me}

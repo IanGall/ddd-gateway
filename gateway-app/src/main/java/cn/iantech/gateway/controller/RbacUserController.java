@@ -1,14 +1,11 @@
 package cn.iantech.gateway.controller;
 
 import cn.iantech.api.IRbacService;
-import cn.iantech.api.model.rbac.CreateRbacUserReq;
-import cn.iantech.api.model.rbac.DeleteRbacUserReq;
-import cn.iantech.api.model.rbac.QueryRbacUserPageReq;
-import cn.iantech.api.model.rbac.RbacUserDTO;
-import cn.iantech.api.model.rbac.RbacUserPageDTO;
-import cn.iantech.api.model.rbac.UpdateRbacUserReq;
+import cn.iantech.api.model.rbac.*;
 import cn.iantech.common.model.Response;
+import cn.iantech.context.core.ContextAccessor;
 import cn.iantech.gateway.model.RbacWebRequests;
+import cn.iantech.gateway.service.GatewayTokenService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -16,15 +13,7 @@ import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import static cn.iantech.gateway.model.GatewayResponses.success;
 
@@ -35,6 +24,12 @@ public class RbacUserController {
 
     @DubboReference(version = "1.0.0", protocol = "tri", timeout = 10000, retries = 0, check = false)
     private IRbacService rbacService;
+
+    private final GatewayTokenService tokenService;
+
+    public RbacUserController(GatewayTokenService tokenService) {
+        this.tokenService = tokenService;
+    }
 
     @PostMapping
     public Response<RbacUserDTO> createUser(@Valid @RequestBody RbacWebRequests.CreateUser request) {
@@ -82,12 +77,24 @@ public class RbacUserController {
                 .mobile(request.mobile())
                 .status(request.status())
                 .build();
-        return success(rbacService.updateUser(rpcRequest));
+        RbacUserDTO updated = rbacService.updateUser(rpcRequest);
+        if (request.password() != null || Boolean.FALSE.equals(request.status())) {
+            tokenService.revokeUser(currentAccountId(), id, "SUB_ACCOUNT");
+        }
+        return success(updated);
     }
 
     @DeleteMapping("/{id}")
     public Response<Boolean> deleteUser(@Positive(message = "用户ID必须大于0") @PathVariable("id") Long id) {
-        return success(rbacService.deleteUser(DeleteRbacUserReq.builder().id(id).build()));
+        Boolean deleted = rbacService.deleteUser(DeleteRbacUserReq.builder().id(id).build());
+        if (Boolean.TRUE.equals(deleted)) {
+            tokenService.revokeUser(currentAccountId(), id, "SUB_ACCOUNT");
+        }
+        return success(deleted);
+    }
+
+    private Long currentAccountId() {
+        return Long.valueOf(ContextAccessor.current().orElseThrow().tenantId());
     }
 
 }

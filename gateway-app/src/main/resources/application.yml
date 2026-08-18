@@ -32,7 +32,22 @@ management:
 sa-token:
   token-name: Authorization
   token-prefix: Bearer
+  timeout: 900
+  is-concurrent: true
+  is-share: false
   is-read-header: true
   is-read-cookie: false
   is-read-body: false
   is-read-param: false
+
+gateway:
+  security:
+    session:
+      # 开发和生产环境均使用共享会话；测试可通过属性显式切换到内存实现。
+      redis-enabled: ${AUTH_REDIS_ENABLED:true}
+      access-token-timeout: 900
+      refresh-token-timeout: 2592000
+      redis:
+        address: ${AUTH_REDIS_ADDRESS:redis://127.0.0.1:6379}
+        password: ${AUTH_REDIS_PASSWORD:}
+        database: ${AUTH_REDIS_DATABASE:0}

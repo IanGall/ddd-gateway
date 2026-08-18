@@ -19,9 +19,14 @@ export DUBBO_REGISTRY_ADDRESS='nacos://127.0.0.1:8848'
 export DUBBO_REGISTRY_USERNAME='nacos-user'
 export DUBBO_REGISTRY_PASSWORD='从密钥管理系统读取'
 export PLATFORM_ADMIN_TOKEN='从密钥管理系统读取的高强度令牌'
+export AUTH_REDIS_ADDRESS='redis://redis.example.internal:6379'
+export AUTH_REDIS_PASSWORD='从密钥管理系统读取'
 ```
 
 同时启动 `ian-ddd-archetype-std` 并发布 `cn.iantech.api.IRbacService:1.0.0`。
+
+默认、开发和生产 profile 均启用 Redis 共享会话；必须保证 Redis 可连接并配置 `AUTH_REDIS_ADDRESS`。 仅测试场景通过测试属性显式关闭
+Redis，生产运行路径不提供内存降级。
 
 `POST /platform/accounts` 只接受 `X-Platform-Token`，生产环境未配置 `PLATFORM_ADMIN_TOKEN` 时应用拒绝启动。登录成功后，网关只从
 Sa-Token Session 恢复主账号 ID、当前用户 ID 与本地用户名，不采信外部 `X-Tenant-Id` 或 `X-User-Id`。Dubbo Triple 使用明文
@@ -47,15 +52,23 @@ curl -X POST http://127.0.0.1:8092/platform/accounts \
   -H "X-Platform-Token: $PLATFORM_ADMIN_TOKEN" \
   -d '{"username":"root","password":"高强度主账号密码","displayName":"示例主账号"}'
 
-TOKEN=$(curl -s -X POST http://127.0.0.1:8092/auth/login \
+LOGIN_RESPONSE=$(curl -s -X POST http://127.0.0.1:8092/auth/login \
   -H 'Content-Type: application/json' \
   -d '{"loginName":"root@主账号ID.com","password":"高强度主账号密码"}' \
-  | jq -r '.data.token')
-curl -H "Authorization: Bearer $TOKEN" \
+)
+ACCESS_TOKEN=$(printf '%s' "$LOGIN_RESPONSE" | jq -r '.data.accessToken')
+REFRESH_TOKEN=$(printf '%s' "$LOGIN_RESPONSE" | jq -r '.data.refreshToken')
+curl -H "Authorization: Bearer $ACCESS_TOKEN" \
   "http://127.0.0.1:8092/api/rbac/users?pageNum=1&pageSize=20"
+
+curl -s -X POST http://127.0.0.1:8092/auth/refresh \
+  -H 'Content-Type: application/json' \
+  -d "{\"refreshToken\":\"$REFRESH_TOKEN\"}"
 ```
 
-业务请求需在 `Authorization` 请求头中携带 `Bearer <token>`，不再使用 `satoken` 请求头。
+业务请求需在 `Authorization` 请求头中携带 `Bearer <accessToken>`，Refresh Token 只提交给 `/auth/refresh`，不放入 URL
+或业务请求头。
+`/auth/logout`、`/auth/logout-all`、`/auth/sessions` 和 `/auth/sessions/{sessionId}` 用于退出和设备会话管理。
 
 健康检查无需认证：
 

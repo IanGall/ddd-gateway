@@ -10,6 +10,7 @@ public final class GatewaySessionKeys {
     public static final String USERNAME = "username";
     public static final String USER_TYPE = "userType";
     public static final String PERMISSION_LIST = "permissionList";
+    public static final String REFRESH_SESSION_ID = "refreshSessionId";
 
     private GatewaySessionKeys() {
     }

@@ -27,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.*;
                 "dubbo.registry.address=N/A",
                 "dubbo.config-center.address=N/A",
                 "dubbo.consumer.init=false",
+                "gateway.security.session.redis-enabled=false",
                 "gateway.security.platform.token=test-platform-token"
         })
 @Import(ContextPropagationIntegrationTest.ContextController.class)
@@ -54,6 +55,15 @@ class ContextPropagationIntegrationTest {
         org.mockito.Mockito.when(authenticator.createAccount(org.mockito.ArgumentMatchers.any()))
                 .thenReturn(RbacAccountDTO.builder().accountId(1001L).username("root")
                         .loginName("root@1001.com").build());
+        org.mockito.Mockito.when(authenticator.reloadAuthentication(org.mockito.ArgumentMatchers.any()))
+                .thenReturn(RbacAuthDTO.builder()
+                        .userId(9_223_372_036_854_770_002L)
+                        .accountId(9_223_372_036_854_770_001L)
+                        .username("test-user")
+                        .userType("SUB_ACCOUNT")
+                        .roleCodes(java.util.List.of("OPERATOR"))
+                        .permissionCodes(java.util.List.of("rbac:user:read"))
+                        .build());
     }
 
     @LocalServerPort
@@ -70,7 +80,7 @@ class ContextPropagationIntegrationTest {
         HttpClient client = HttpClient.newHttpClient();
         HttpResponse<String> loginResponse = client.send(loginRequest, HttpResponse.BodyHandlers.ofString());
         assertEquals(200, loginResponse.statusCode());
-        String token = Pattern.compile("\\\"token\\\":\\\"([^\\\"]+)\\\"")
+        String token = Pattern.compile("\\\"accessToken\\\":\\\"([^\\\"]+)\\\"")
                 .matcher(loginResponse.body()).results().findFirst().orElseThrow().group(1);
         HttpRequest request = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + "/api/rbac/context"))
                 .header("Authorization", "Bearer " + token)
@@ -125,6 +135,48 @@ class ContextPropagationIntegrationTest {
         assertTrue(response.body().contains("AUTH_REQUIRED"));
     }
 
+    // 验证刷新令牌轮换、旧访问令牌失效以及重放后整族撤销
+    @Test
+    void shouldRotateRefreshTokenAndRevokeFamilyOnReplay() throws Exception {
+        HttpClient client = HttpClient.newHttpClient();
+        HttpResponse<String> login = client.send(HttpRequest.newBuilder(
+                        URI.create("http://127.0.0.1:" + port + "/auth/login"))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(
+                        "{\"loginName\":\"test-user@9223372036854770001.com\","
+                                + "\"password\":\"test-password\",\"clientType\":\"web\","
+                                + "\"deviceId\":\"browser-001\"}"))
+                .build(), HttpResponse.BodyHandlers.ofString());
+        String oldAccessToken = field(login.body(), "accessToken");
+        String oldRefreshToken = field(login.body(), "refreshToken");
+
+        HttpResponse<String> refreshed = client.send(HttpRequest.newBuilder(
+                        URI.create("http://127.0.0.1:" + port + "/auth/refresh"))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(
+                        "{\"refreshToken\":\"" + oldRefreshToken + "\"}"))
+                .build(), HttpResponse.BodyHandlers.ofString());
+
+        assertEquals(200, refreshed.statusCode());
+        String newAccessToken = field(refreshed.body(), "accessToken");
+        String newRefreshToken = field(refreshed.body(), "refreshToken");
+        assertNotEquals(oldAccessToken, newAccessToken);
+        assertNotEquals(oldRefreshToken, newRefreshToken);
+        assertEquals(401, contextRequest(client, oldAccessToken).statusCode());
+        assertEquals(200, contextRequest(client, newAccessToken).statusCode());
+
+        HttpResponse<String> replay = client.send(HttpRequest.newBuilder(
+                        URI.create("http://127.0.0.1:" + port + "/auth/refresh"))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(
+                        "{\"refreshToken\":\"" + oldRefreshToken + "\"}"))
+                .build(), HttpResponse.BodyHandlers.ofString());
+
+        assertEquals(401, replay.statusCode());
+        assertTrue(replay.body().contains("AUTH_REQUIRED"));
+        assertEquals(401, contextRequest(client, newAccessToken).statusCode());
+    }
+
     // 验证 RBAC 路由拒绝匿名请求
     @Test
     void shouldRejectAnonymousRbacRequest() throws Exception {
@@ -147,5 +199,18 @@ class ContextPropagationIntegrationTest {
         RequestContext currentContext() {
             return ContextAccessor.current().orElseThrow();
         }
+    }
+
+    private HttpResponse<String> contextRequest(HttpClient client, String accessToken) throws Exception {
+        return client.send(HttpRequest.newBuilder(
+                        URI.create("http://127.0.0.1:" + port + "/api/rbac/context"))
+                .header("Authorization", "Bearer " + accessToken)
+                .GET()
+                .build(), HttpResponse.BodyHandlers.ofString());
+    }
+
+    private String field(String body, String name) {
+        return Pattern.compile("\\\"" + name + "\\\":\\\"([^\\\"]+)\\\"")
+                .matcher(body).results().findFirst().orElseThrow().group(1);
     }
 }

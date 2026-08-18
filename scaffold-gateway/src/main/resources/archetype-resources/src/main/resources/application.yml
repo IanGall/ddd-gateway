@@ -28,7 +28,17 @@ management:
 sa-token:
   token-name: Authorization
   token-prefix: Bearer
+  timeout: 900
+  is-share: false
   is-read-header: true
   is-read-cookie: false
   is-read-body: false
   is-read-param: false
+
+gateway:
+  security:
+    token:
+      access-ttl: 15m
+      refresh-ttl: 30d
+      refresh-lock-wait: 3s
+      refresh-lock-lease: 10s
