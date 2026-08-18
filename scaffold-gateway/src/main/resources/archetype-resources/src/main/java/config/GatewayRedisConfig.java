@@ -1,7 +1,5 @@
 package ${package}.config;
 
-import cn.dev33.satoken.dao.SaTokenDao;
-import cn.dev33.satoken.dao.SaTokenDaoForRedisson;
 import ${package}.service.RedissonRefreshSessionStore;
 import ${package}.service.RefreshSessionStore;
 import org.redisson.api.RedissonClient;
@@ -14,12 +12,6 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @EnableConfigurationProperties(GatewayTokenProperties.class)
 public class GatewayRedisConfig {
-
-    @Bean
-    @ConditionalOnBean(RedissonClient.class)
-    SaTokenDao saTokenDao(RedissonClient redissonClient) {
-        return new SaTokenDaoForRedisson(redissonClient);
-    }
 
     @Bean
     @ConditionalOnBean(RedissonClient.class)

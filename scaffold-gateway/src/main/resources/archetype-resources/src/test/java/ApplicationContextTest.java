@@ -36,7 +36,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
         "dubbo.config-center.address=N/A",
         "dubbo.consumer.init=false",
         "gateway.security.platform.token=test-platform-token",
-        "spring.autoconfigure.exclude=org.redisson.spring.starter.RedissonAutoConfigurationV2,org.redisson.spring.starter.RedissonAutoConfigurationV4"
+        "spring.autoconfigure.exclude=org.redisson.spring.starter.RedissonAutoConfigurationV2,"
+                + "org.redisson.spring.starter.RedissonAutoConfigurationV4,"
+                + "cn.dev33.satoken.spring.SaTokenDaoForRedissonBeanRegister"
 })
 @Import(ApplicationContextTest.InMemoryRefreshStoreConfig.class)
 class ApplicationContextTest {

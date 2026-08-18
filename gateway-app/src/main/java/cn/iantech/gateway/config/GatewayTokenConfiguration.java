@@ -1,7 +1,5 @@
 package cn.iantech.gateway.config;
 
-import cn.dev33.satoken.dao.SaTokenDao;
-import cn.dev33.satoken.dao.SaTokenDaoForRedisson;
 import cn.iantech.gateway.service.InMemoryRefreshSessionStore;
 import cn.iantech.gateway.service.RedisRefreshSessionStore;
 import cn.iantech.gateway.service.RefreshSessionStore;
@@ -21,15 +19,8 @@ public class GatewayTokenConfiguration {
     @Bean
     @ConditionalOnProperty(prefix = "gateway.security.session", name = "redis-enabled", havingValue = "true",
             matchIfMissing = true)
-    SaTokenDao saTokenDao(RedissonClient redissonClient, GatewayTokenProperties properties) {
+    RefreshSessionStore redisRefreshSessionStore(RedissonClient redissonClient, GatewayTokenProperties properties) {
         validate(properties);
-        return new SaTokenDaoForRedisson(redissonClient);
-    }
-
-    @Bean
-    @ConditionalOnProperty(prefix = "gateway.security.session", name = "redis-enabled", havingValue = "true",
-            matchIfMissing = true)
-    RefreshSessionStore redisRefreshSessionStore(RedissonClient redissonClient) {
         return new RedisRefreshSessionStore(redissonClient);
     }
 

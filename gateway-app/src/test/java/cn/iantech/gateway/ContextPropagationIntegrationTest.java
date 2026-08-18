@@ -28,7 +28,9 @@ import static org.junit.jupiter.api.Assertions.*;
                 "dubbo.config-center.address=N/A",
                 "dubbo.consumer.init=false",
                 "gateway.security.session.redis-enabled=false",
-                "spring.autoconfigure.exclude=org.redisson.spring.starter.RedissonAutoConfigurationV2,org.redisson.spring.starter.RedissonAutoConfigurationV4",
+                "spring.autoconfigure.exclude=org.redisson.spring.starter.RedissonAutoConfigurationV2,"
+                        + "org.redisson.spring.starter.RedissonAutoConfigurationV4,"
+                        + "cn.dev33.satoken.spring.SaTokenDaoForRedissonBeanRegister",
                 "gateway.security.platform.token=test-platform-token"
         })
 @Import(ContextPropagationIntegrationTest.ContextController.class)
