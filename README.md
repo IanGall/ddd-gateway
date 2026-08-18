@@ -19,20 +19,16 @@ export DUBBO_REGISTRY_ADDRESS='nacos://127.0.0.1:8848'
 export DUBBO_REGISTRY_USERNAME='nacos-user'
 export DUBBO_REGISTRY_PASSWORD='从密钥管理系统读取'
 export PLATFORM_ADMIN_TOKEN='从密钥管理系统读取的高强度令牌'
-export REDIS_HOST='redis.example.internal'
-export REDIS_PORT='6379'
-export REDIS_PASSWORD='从密钥管理系统读取'
 ```
 
-同时启动 `ian-ddd-archetype-std` 并发布 `cn.iantech.api.IRbacService:1.0.0`。
+同时启动 `ian-ddd-archetype-std` 并发布 `cn.iantech.api.IAuthService:1.0.0`。
 
-默认、开发和生产 profile 均启用 Redis 共享会话；必须保证 Redis 可连接并配置 `REDIS_HOST`、`REDIS_PORT`、`REDIS_PASSWORD`
-。仅测试场景通过测试属性显式关闭
-Redis，生产运行路径不提供内存降级。
+认证会话由 RBAC Auth 服务统一保存和校验，Gateway 不再连接 Redis，也不保存本地 Session。
 
-`POST /platform/accounts` 只接受 `X-Platform-Token`，生产环境未配置 `PLATFORM_ADMIN_TOKEN` 时应用拒绝启动。登录成功后，网关只从
-Sa-Token Session 恢复主账号 ID、当前用户 ID 与本地用户名，不采信外部 `X-Tenant-Id` 或 `X-User-Id`。Dubbo Triple 使用明文
-RPC 连接，注册中心仍使用 Nacos 用户名密码认证。
+`POST /platform/accounts` 只接受 `X-Platform-Token`，生产环境未配置 `PLATFORM_ADMIN_TOKEN` 时应用拒绝启动。登录、刷新、注销和会话管理
+均由 Gateway 转发给 RBAC Auth；业务请求携带的是由 Auth 签发的 opaque Bearer Token。Gateway 每个受保护请求调用 Auth 校验令牌后，
+再恢复主账号和当前用户上下文，不采信外部 `X-Tenant-Id` 或 `X-User-Id`。Dubbo Triple 使用现有明文 RPC 连接，不启用 JWT、JWKS
+或 mTLS。
 
 ### 编译与测试
 
@@ -80,8 +76,8 @@ curl "http://127.0.0.1:8092/actuator/health"
 
 ## 通用网关骨架
 
-骨架包含 Web 接入、安全认证、参数校验、统一异常、Actuator、Dubbo Triple 消费端和 Nacos 配置。认证契约明确绑定标准工程的
-`IRbacService`，负责主账号/子账号登录、平台级开户和可信上下文恢复；具体 RBAC 管理接口仍由业务网关自行接入，不复制到骨架中。
+骨架包含 Web 接入、Auth RPC 认证、参数校验、统一异常、Actuator、Dubbo Triple 消费端和 Nacos 配置。认证契约明确绑定标准工程的
+`IAuthService`，负责主账号/子账号登录、opaque Token 校验、会话管理和平台级开户；具体 RBAC 管理接口仍由业务网关自行接入，不复制到骨架中。
 
 ### 构建与安装
 

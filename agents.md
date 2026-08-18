@@ -6,10 +6,12 @@
 
 ## 变更边界
 - 参考应用负责 HTTP 接入、参数校验、协议适配与下游调用编排。
-- 通用骨架仅绑定标准工程 `IRbacService` 的认证与平台开户契约，不复制具体 RBAC 管理接口，也不得生成虚假的 RPC 契约。
+- 通用骨架绑定标准工程 `IAuthService` 的认证契约和 `IRbacService` 的平台开户契约，不复制具体 RBAC 管理接口，也不得生成虚假的
+  RPC 契约。
 - 核心领域规则必须由下游 DDD 服务实现。
-- 网关只从已认证 Token Session 建立主账号与当前用户上下文，不信任 `X-Tenant-Id`、`X-User-Id` 等外部身份 Header。
-- Dubbo Triple 消费端使用明文 RPC；注册中心认证配置与业务层 Sa-Token 认证保持独立。
+- 网关每个受保护请求通过 Auth RPC 校验 opaque Token 后建立主账号与当前用户上下文，不信任 `X-Tenant-Id`、`X-User-Id` 等外部身份
+  Header。
+- Dubbo Triple 消费端使用明文 RPC；网关不持有 Session、不连接 Auth Redis，不使用 JWT 或 Sa-Token 本地认证。
 
 ## 依赖约束
 - 构建统一继承 `ddd-base`，通用依赖统一导入 `ddd-base-bom`，避免模块内分散定义版本。

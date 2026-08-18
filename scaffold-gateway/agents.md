@@ -3,7 +3,7 @@
 ## 模块定位
 
 - 本模块是通用网关 Maven Archetype，不承载具体业务实现。
-- 模板必须能够独立生成、编译和测试，仅依赖标准工程稳定的 `IRbacService` 认证契约。
+- 模板必须能够独立生成、编译和测试，仅依赖标准工程稳定的 `IAuthService` 认证契约及 `IRbacService` 平台账号契约。
 
 ## 模板约束
 
@@ -11,7 +11,8 @@
 - RPC 协议统一使用 Dubbo Triple；除认证与平台开户外的业务契约由生成后的工程自行引入。
 - 公共模型复用 `ddd-common`，禁止引入 Hutool 或创建重复公共模块。
 - 所有环境变量占位符必须通过 Archetype 集成测试确认生成结果正确。
-- 生成工程使用 `PLATFORM_ADMIN_TOKEN` 保护平台开户，租户边界来自认证会话；Dubbo Triple 使用明文 RPC，注册中心凭据仍通过环境变量注入。
+- 生成工程使用 `PLATFORM_ADMIN_TOKEN` 保护平台开户，租户边界来自 Auth 校验后的可信身份；Gateway 不连接 Redis、不保存
+  Session，Dubbo Triple 使用明文 RPC，注册中心凭据仍通过环境变量注入。
 
 ## 提交前检查
 

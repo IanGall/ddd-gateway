@@ -33,10 +33,10 @@ mvn archetype:generate \
   -DinteractiveMode=false
 ```
 
-生成工程继承 `ddd-base` 并导入 `ddd-base-bom`，默认包含 Spring MVC、Sa-Token、Redisson、参数校验、Actuator、Dubbo Triple、
-Nacos、`ddd-common` 和标准工程 `IRbacService` 认证契约。骨架实现 Access Token、Refresh Token 轮换与设备会话管理， 但不复制具体
-RBAC 管理接口。
+生成工程继承 `ddd-base` 并导入 `ddd-base-bom`，默认包含 Spring MVC、参数校验、Actuator、Dubbo Triple、Nacos、`ddd-common` 和
+标准工程 `IAuthService` 认证契约。认证和设备会话由 RBAC Auth 服务实现，Gateway 只转发 `/auth/*` 并按请求调用 Auth 校验
+opaque Token， 不复制具体 RBAC 管理接口。
 
-生成工程的 Refresh Session 默认使用 Redis，生产环境必须配置 Redis，并通过 `PLATFORM_ADMIN_TOKEN` 保护主账号创建接口。
-租户边界来自认证后的主账号 ID，不再使用固定租户配置。Dubbo 消费端使用明文 Triple，注册中心通过
+生产环境只需配置 Auth 服务可访问的 Dubbo/Nacos 信息，并通过 `PLATFORM_ADMIN_TOKEN` 保护主账号创建接口。租户边界来自 Auth
+校验后的 主账号 ID，不再使用固定租户配置。Dubbo 消费端使用明文 Triple，注册中心通过
 `DUBBO_REGISTRY_USERNAME` 和 `DUBBO_REGISTRY_PASSWORD` 认证。

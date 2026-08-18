@@ -3,9 +3,6 @@ package ${package}.exception;
 import cn.iantech.common.constant.Constants;
 import cn.iantech.common.exception.AppException;
 import cn.iantech.common.model.Response;
-import cn.dev33.satoken.exception.NotLoginException;
-import cn.dev33.satoken.exception.NotPermissionException;
-import cn.dev33.satoken.exception.NotRoleException;
 import jakarta.validation.ConstraintViolationException;
 import org.apache.dubbo.rpc.RpcException;
 import org.slf4j.Logger;
@@ -42,16 +39,6 @@ public class GatewayExceptionHandler {
         }
         return response(HttpStatus.UNPROCESSABLE_ENTITY, exception.getCode(),
                 Objects.requireNonNullElse(exception.getInfo(), Constants.ResponseCode.UN_ERROR.getInfo()));
-    }
-
-    @ExceptionHandler(NotLoginException.class)
-    public ResponseEntity<Response<Void>> handleNotLoginException(NotLoginException exception) {
-        return response(HttpStatus.UNAUTHORIZED, "AUTH_REQUIRED", "需要认证");
-    }
-
-    @ExceptionHandler({NotRoleException.class, NotPermissionException.class})
-    public ResponseEntity<Response<Void>> handleAccessDeniedException(Exception exception) {
-        return response(HttpStatus.FORBIDDEN, "ACCESS_DENIED", "无权访问");
     }
 
     @ExceptionHandler({MethodArgumentNotValidException.class, ConstraintViolationException.class,

@@ -11,7 +11,5 @@ dubbo:
 
 gateway:
   security:
-    session:
-      redis-enabled: true
     platform:
       token: ${PLATFORM_ADMIN_TOKEN}

@@ -3,9 +3,7 @@ package cn.iantech.gateway.controller;
 import cn.iantech.api.IRbacService;
 import cn.iantech.api.model.rbac.*;
 import cn.iantech.common.model.Response;
-import cn.iantech.context.core.ContextAccessor;
 import cn.iantech.gateway.model.RbacWebRequests;
-import cn.iantech.gateway.service.GatewayTokenService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -24,12 +22,6 @@ public class RbacUserController {
 
     @DubboReference(version = "1.0.0", protocol = "tri", timeout = 10000, retries = 0, check = false)
     private IRbacService rbacService;
-
-    private final GatewayTokenService tokenService;
-
-    public RbacUserController(GatewayTokenService tokenService) {
-        this.tokenService = tokenService;
-    }
 
     @PostMapping
     public Response<RbacUserDTO> createUser(@Valid @RequestBody RbacWebRequests.CreateUser request) {
@@ -78,23 +70,13 @@ public class RbacUserController {
                 .status(request.status())
                 .build();
         RbacUserDTO updated = rbacService.updateUser(rpcRequest);
-        if (request.password() != null || Boolean.FALSE.equals(request.status())) {
-            tokenService.revokeUser(currentAccountId(), id, "SUB_ACCOUNT");
-        }
         return success(updated);
     }
 
     @DeleteMapping("/{id}")
     public Response<Boolean> deleteUser(@Positive(message = "用户ID必须大于0") @PathVariable("id") Long id) {
         Boolean deleted = rbacService.deleteUser(DeleteRbacUserReq.builder().id(id).build());
-        if (Boolean.TRUE.equals(deleted)) {
-            tokenService.revokeUser(currentAccountId(), id, "SUB_ACCOUNT");
-        }
         return success(deleted);
-    }
-
-    private Long currentAccountId() {
-        return Long.valueOf(ContextAccessor.current().orElseThrow().tenantId());
     }
 
 }

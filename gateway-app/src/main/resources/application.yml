@@ -6,12 +6,6 @@ spring:
     name: ian-ddd-gateway
   profiles:
     active: dev
-  data:
-    redis:
-      host: ${REDIS_HOST:127.0.0.1}
-      port: ${REDIS_PORT:6379}
-      password: ${REDIS_PASSWORD:Ian2026OpsPwd}
-      database: ${REDIS_DATABASE:0}
 
 dubbo:
   application:
@@ -34,22 +28,3 @@ management:
     web:
       exposure:
         include: health
-
-sa-token:
-  token-name: Authorization
-  token-prefix: Bearer
-  timeout: 900
-  is-concurrent: true
-  is-share: false
-  is-read-header: true
-  is-read-cookie: false
-  is-read-body: false
-  is-read-param: false
-
-gateway:
-  security:
-    session:
-      # 开发和生产环境均使用共享会话；测试可通过属性显式切换到内存实现。
-      redis-enabled: true
-      access-token-timeout: 900
-      refresh-token-timeout: 2592000

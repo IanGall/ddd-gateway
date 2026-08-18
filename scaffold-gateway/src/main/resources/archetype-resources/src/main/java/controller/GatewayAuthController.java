@@ -1,17 +1,16 @@
 package ${package}.controller;
 
-import cn.iantech.api.model.rbac.AuthenticateRbacReq;
-import cn.iantech.api.model.rbac.RbacAuthDTO;
-import cn.iantech.common.exception.AppException;
+import cn.iantech.api.model.auth.AuthLoginReq;
+import cn.iantech.api.model.auth.AuthRefreshReq;
+import cn.iantech.api.model.auth.AuthSessionDTO;
+import cn.iantech.api.model.auth.AuthTokenDTO;
 import cn.iantech.common.model.Response;
-import ${package}.model.AuthSessionView;
-import ${package}.model.AuthTokenResponse;
-import ${package}.model.RefreshSession;
-import ${package}.service.GatewayRbacAuthenticator;
-import ${package}.service.GatewayTokenService;
+import ${package}.config.GatewayAuthFilter;
+import ${package}.service.GatewayAuthClient;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -25,67 +24,70 @@ import java.util.List;
 
 import static ${package}.model.GatewayResponses.success;
 
-/** 生成网关的主账号与子账号登录接口。 */
+/** Auth HTTP 门面，认证、令牌和会话状态均由 RBAC Auth 服务管理。 */
 @RestController
 @RequestMapping("/auth")
 public class GatewayAuthController {
 
-    private final GatewayRbacAuthenticator authenticator;
-    private final GatewayTokenService tokenService;
+    private final GatewayAuthClient authClient;
 
-    public GatewayAuthController(GatewayRbacAuthenticator authenticator, GatewayTokenService tokenService) {
-        this.authenticator = authenticator;
-        this.tokenService = tokenService;
+    public GatewayAuthController(GatewayAuthClient authClient) {
+        this.authClient = authClient;
     }
 
     @PostMapping("/login")
-    public Response<AuthTokenResponse> login(@Valid @RequestBody LoginRequest request,
-                                             HttpServletRequest servletRequest) {
-        RbacAuthDTO authenticated = authenticator.authenticate(AuthenticateRbacReq.builder()
+    public Response<AuthTokenDTO> login(@Valid @RequestBody LoginRequest request,
+                                        HttpServletRequest servletRequest) {
+        return success(authClient.login(AuthLoginReq.builder()
                 .loginName(request.loginName())
                 .password(request.password())
-                .build());
-        if (authenticated == null) {
-            throw new AppException("AUTH_REQUIRED", "账号或密码错误");
-        }
-        return success(tokenService.login(authenticated, metadata(servletRequest)));
+                .clientType(limited(request.clientType(), 64))
+                .deviceId(limited(request.deviceId(), 128))
+                .ipAddress(limited(servletRequest.getRemoteAddr(), 64))
+                .userAgent(limited(servletRequest.getHeader("User-Agent"), 256))
+                .build()));
     }
 
     @PostMapping("/refresh")
-    public Response<AuthTokenResponse> refresh(@Valid @RequestBody RefreshRequest request,
-                                               HttpServletRequest servletRequest) {
-        return success(tokenService.refresh(request.refreshToken(), metadata(servletRequest)));
+    public Response<AuthTokenDTO> refresh(@Valid @RequestBody RefreshRequest request,
+                                           HttpServletRequest servletRequest) {
+        return success(authClient.refresh(AuthRefreshReq.builder()
+                .refreshToken(request.refreshToken())
+                .ipAddress(limited(servletRequest.getRemoteAddr(), 64))
+                .userAgent(limited(servletRequest.getHeader("User-Agent"), 256))
+                .build()));
     }
 
     @PostMapping("/logout")
-    public Response<Boolean> logout() {
-        tokenService.logoutCurrent();
-        return success(Boolean.TRUE);
+    public Response<Void> logout(HttpServletRequest request) {
+        authClient.logout(requiredAccessToken(request));
+        return success(null);
     }
 
     @PostMapping("/logout-all")
-    public Response<Boolean> logoutAll() {
-        tokenService.logoutAll();
-        return success(Boolean.TRUE);
+    public Response<Void> logoutAll(HttpServletRequest request) {
+        authClient.logoutAll(requiredAccessToken(request));
+        return success(null);
     }
 
     @GetMapping("/sessions")
-    public Response<List<AuthSessionView>> sessions() {
-        return success(tokenService.sessions());
+    public Response<List<AuthSessionDTO>> sessions(HttpServletRequest request) {
+        return success(authClient.sessions(requiredAccessToken(request)));
     }
 
     @DeleteMapping("/sessions/{sessionId}")
-    public Response<Boolean> revokeSession(@PathVariable String sessionId) {
-        tokenService.revokeSession(sessionId);
-        return success(Boolean.TRUE);
+    public Response<Void> revokeSession(@PathVariable @Size(max = 64, message = "会话ID长度不能超过64") String sessionId,
+                                        HttpServletRequest request) {
+        authClient.revokeSession(requiredAccessToken(request), sessionId);
+        return success(null);
     }
 
-    private RefreshSession.ClientMetadata metadata(HttpServletRequest request) {
-        return new RefreshSession.ClientMetadata(
-                limited(request.getHeader("X-Client-Type"), 64),
-                limited(request.getHeader("X-Device-Id"), 128),
-                limited(request.getRemoteAddr(), 64),
-                limited(request.getHeader("User-Agent"), 256));
+    private String requiredAccessToken(HttpServletRequest request) {
+        String token = GatewayAuthFilter.accessToken(request);
+        if (token == null || token.isBlank()) {
+            throw new IllegalStateException("认证过滤器未建立可信令牌上下文");
+        }
+        return token;
     }
 
     private String limited(String value, int maxLength) {
@@ -95,9 +97,15 @@ public class GatewayAuthController {
         return value.length() <= maxLength ? value : value.substring(0, maxLength);
     }
 
-    public record LoginRequest(@NotBlank String loginName, @NotBlank String password) {
+    public record LoginRequest(
+            @NotBlank(message = "登录名不能为空") String loginName,
+            @NotBlank(message = "密码不能为空") String password,
+            @Size(max = 64, message = "客户端类型长度不能超过64") String clientType,
+            @Size(max = 128, message = "设备ID长度不能超过128") String deviceId) {
     }
 
-    public record RefreshRequest(@NotBlank @Size(max = 512) String refreshToken) {
+    public record RefreshRequest(
+            @NotBlank(message = "刷新令牌不能为空") @Size(max = 512, message = "刷新令牌长度不能超过512")
+            @Pattern(regexp = "[A-Za-z0-9_-]+", message = "刷新令牌格式不正确") String refreshToken) {
     }
 }

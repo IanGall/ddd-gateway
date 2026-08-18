@@ -7,12 +7,6 @@ spring:
     name: ${rootArtifactId}
   profiles:
     active: dev
-  data:
-    redis:
-      host: ${symbol_dollar}{REDIS_HOST:127.0.0.1}
-      port: ${symbol_dollar}{REDIS_PORT:6379}
-      password: ${symbol_dollar}{REDIS_PASSWORD:Ian2026OpsPwd}
-      database: ${symbol_dollar}{REDIS_DATABASE:0}
 
 dubbo:
   application:
@@ -31,21 +25,3 @@ management:
     web:
       exposure:
         include: health
-
-sa-token:
-  token-name: Authorization
-  token-prefix: Bearer
-  timeout: 900
-  is-share: false
-  is-read-header: true
-  is-read-cookie: false
-  is-read-body: false
-  is-read-param: false
-
-gateway:
-  security:
-    token:
-      access-ttl: 15m
-      refresh-ttl: 30d
-      refresh-lock-wait: 3s
-      refresh-lock-lease: 10s
