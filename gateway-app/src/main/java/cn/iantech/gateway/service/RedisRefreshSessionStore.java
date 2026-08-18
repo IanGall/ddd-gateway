@@ -37,11 +37,12 @@ public class RedisRefreshSessionStore implements RefreshSessionStore {
 
         RSet<String> familyIndex = redissonClient.getSet(familyKey(session.familyId()));
         familyIndex.add(session.sessionId());
-        familyIndex.expireIfGreater(session.expiresAt());
+        // 不使用 expireIfGreater：该 API 会生成带 GT 参数的 PEXPIREAT 脚本，旧版 Redis 不支持。
+        familyIndex.expire(ttl(session.expiresAt()));
 
         RSet<String> userIndex = redissonClient.getSet(userKey(session.accountId(), session.userId(), session.userType()));
         userIndex.add(session.sessionId());
-        userIndex.expireIfGreater(session.expiresAt());
+        userIndex.expire(ttl(session.expiresAt()));
     }
 
     @Override
