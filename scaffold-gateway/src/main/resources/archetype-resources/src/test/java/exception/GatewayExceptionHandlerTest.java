@@ -99,4 +99,12 @@ class GatewayExceptionHandlerTest {
         assertEquals(Constants.ResponseCode.INVALID_ARGUMENT.getInfo(), response.getBody().getInfo());
     }
 
+    @Test
+    void shouldMapOversizedChannelBodyToPayloadTooLarge() {
+        ResponseEntity<Response<Void>> response = handler.handlePayloadTooLarge();
+
+        assertEquals(HttpStatus.PAYLOAD_TOO_LARGE, response.getStatusCode());
+        assertEquals("PAYLOAD_TOO_LARGE", response.getBody().getCode());
+    }
+
 }

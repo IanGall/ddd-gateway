@@ -72,6 +72,26 @@ curl -s -X POST http://127.0.0.1:8092/auth/refresh \
 或业务请求头。
 `/auth/logout`、`/auth/logout-all`、`/auth/sessions` 和 `/auth/sessions/{sessionId}` 用于退出和设备会话管理。
 
+### 渠道 HMAC 请求
+
+`/api/integration/**` 不使用 Bearer Token。渠道必须为每个请求提供以下五个请求头：
+
+```http
+X-Channel-Code: ch_xxx
+X-Channel-Secret-Version: 1
+X-Channel-Timestamp: 1787107200
+X-Channel-Content-SHA256: 64位小写十六进制
+X-Channel-Signature: 64位小写十六进制
+```
+
+Canonical Request 依次连接大写 Method、规范化 Path、RFC 3986 排序后的 Query、规范化 Content-Type、渠道编码、 密钥版本、Unix
+秒时间戳和原始 Body SHA-256，每项占一行；非空 JSON 的 Content-Type 固定为 `application/json`， 空 Body 的 Content-Type
+为空。签名为 `hexLower(HMAC-SHA256(channelSecret, UTF8(canonicalRequest)))`。
+
+网关限制原始 Body 最大 1 MiB，Auth 只接受当前时间前后 300 秒内的请求，并以 `channelCode + signature` 摘要在 Redis 登记 600
+秒。完全相同的签名只能成功一次；重试必须更新秒级时间戳并重新签名。生产 HTTP 与 Dubbo 均不启用 TLS， HMAC
+只能提供请求认证、完整性和有限防重放，不能加密请求或响应内容。
+
 HTTP 错误统一返回 `{"code","info","data"}`，并保留 `X-Request-Id`。公共语义码和状态码映射如下：
 
 | 响应码                                | HTTP 状态码 |

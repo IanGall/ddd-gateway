@@ -3,7 +3,10 @@ package ${package}.config;
 import cn.iantech.api.model.auth.AuthIdentityDTO;
 import cn.iantech.common.constant.Constants;
 import cn.iantech.common.exception.AppException;
+import cn.iantech.context.core.ContextAccessor;
+import cn.iantech.context.core.RequestContext;
 import ${package}.service.GatewayAuthClient;
+import ${package}.service.GatewayChannelAuthClient;
 import jakarta.servlet.FilterChain;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -12,82 +15,119 @@ import org.springframework.web.servlet.HandlerExceptionResolver;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.util.concurrent.atomic.AtomicReference;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.util.HexFormat;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.*;
 
 class GatewayAuthFilterTest {
 
     @Test
-    void shouldDelegateMissingTokenToHandlerResolver() throws Exception {
-        AtomicReference<RuntimeException> captured = new AtomicReference<>();
-        GatewayAuthFilter filter = new GatewayAuthFilter(new StubAuthClient(null), resolver(captured));
+    void shouldDelegateMissingTokenToExceptionResolver() throws Exception {
+        GatewayAuthClient authClient = mock(GatewayAuthClient.class);
+        HandlerExceptionResolver resolver = mock(HandlerExceptionResolver.class);
+        when(resolver.resolveException(any(), any(), isNull(), any())).thenReturn(new ModelAndView());
+        GatewayAuthFilter filter = new GatewayAuthFilter(authClient, resolver);
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/rbac/roles");
+        request.addHeader(GatewayAuthFilter.REQUEST_ID_HEADER, "request-001");
         MockHttpServletResponse response = new MockHttpServletResponse();
 
-        filter.doFilter(request, response, (servletRequest, servletResponse) -> {
-            throw new AssertionError("认证失败时不应继续调用下游");
-        });
+        filter.doFilter(request, response, mock(FilterChain.class));
 
-        assertEquals(Constants.ResponseCode.AUTH_REQUIRED.getCode(), ((AppException) captured.get()).getCode());
-        assertEquals(401, response.getStatus());
+        verify(resolver).resolveException(any(), any(), isNull(), any(AppException.class));
+        assertEquals("/api/rbac/roles", request.getRequestURI());
+        assertFalse(response.getContentAsString().contains("AUTH_REQUIRED"));
+        assertEquals("request-001", response.getHeader(GatewayAuthFilter.REQUEST_ID_HEADER));
     }
 
     @Test
-    void shouldEstablishTrustedContextForValidToken() throws Exception {
-        AuthIdentityDTO identity = AuthIdentityDTO.builder()
-                .accountId(1001L).userId(2001L).username("root")
-                .userType("ROOT_ACCOUNT").sessionId("session-1").build();
-        GatewayAuthFilter filter = new GatewayAuthFilter(new StubAuthClient(identity), resolver(new AtomicReference<>()));
-        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/status");
+    void shouldDelegateAuthUnavailableToExceptionResolver() throws Exception {
+        GatewayAuthClient authClient = mock(GatewayAuthClient.class);
+        when(authClient.validate("opaque-token"))
+                .thenThrow(new AppException(Constants.ResponseCode.AUTH_UNAVAILABLE.getCode(),
+                        Constants.ResponseCode.AUTH_UNAVAILABLE.getInfo()));
+        HandlerExceptionResolver resolver = mock(HandlerExceptionResolver.class);
+        when(resolver.resolveException(any(), any(), isNull(), any())).thenReturn(new ModelAndView());
+        GatewayAuthFilter filter = new GatewayAuthFilter(authClient, resolver);
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/rbac/roles");
         request.addHeader("Authorization", "Bearer opaque-token");
-        MockHttpServletResponse response = new MockHttpServletResponse();
-        AtomicReference<AuthIdentityDTO> forwarded = new AtomicReference<>();
-        FilterChain chain = (servletRequest, servletResponse) ->
-                forwarded.set(GatewayAuthFilter.identity((MockHttpServletRequest) servletRequest));
 
-        filter.doFilter(request, response, chain);
+        filter.doFilter(request, new MockHttpServletResponse(), mock(FilterChain.class));
 
-        assertEquals(identity, forwarded.get());
-        assertEquals("opaque-token", GatewayAuthFilter.accessToken(request));
-        assertEquals(200, response.getStatus());
-        assertTrue(response.getHeader("X-Request-Id") != null);
+        verify(resolver).resolveException(any(), any(), isNull(), any(AppException.class));
     }
 
     @Test
     void shouldRethrowWhenExceptionResolverReturnsNull() {
-        GatewayAuthFilter filter = new GatewayAuthFilter(new StubAuthClient(null),
-                (request, response, handler, exception) -> null);
+        GatewayAuthClient authClient = mock(GatewayAuthClient.class);
+        HandlerExceptionResolver resolver = mock(HandlerExceptionResolver.class);
+        GatewayAuthFilter filter = new GatewayAuthFilter(authClient, resolver);
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/rbac/roles");
         MockHttpServletResponse response = new MockHttpServletResponse();
 
-        assertThrows(AppException.class, () -> filter.doFilter(request, response, (servletRequest, servletResponse) -> {
-            throw new AssertionError("认证失败时不应继续调用下游");
-        }));
+        assertThrows(AppException.class, () -> filter.doFilter(request, response, mock(FilterChain.class)));
     }
 
-    private HandlerExceptionResolver resolver(AtomicReference<RuntimeException> captured) {
-        return (request, response, handler, exception) -> {
-            captured.set(exception instanceof RuntimeException runtimeException
-                    ? runtimeException : new RuntimeException(exception));
-            response.setStatus(exception instanceof AppException appException
-                    && Constants.ResponseCode.AUTH_REQUIRED.getCode().equals(appException.getCode()) ? 401 : 503);
-            return new ModelAndView();
+    @Test
+    void shouldBuildTrustedContextBeforeCallingChain() throws Exception {
+        GatewayAuthClient authClient = mock(GatewayAuthClient.class);
+        when(authClient.validate("opaque-token")).thenReturn(AuthIdentityDTO.builder()
+                .accountId(100L).userId(200L).username("operator").userType("SUB_ACCOUNT")
+                .sessionId("session-1").build());
+        HandlerExceptionResolver resolver = mock(HandlerExceptionResolver.class);
+        GatewayAuthFilter filter = new GatewayAuthFilter(authClient, resolver);
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/rbac/roles");
+        request.addHeader("Authorization", "Bearer opaque-token");
+        AtomicReference<RequestContext> captured = new AtomicReference<>();
+        FilterChain chain = (servletRequest, response) -> captured.set(ContextAccessor.current().orElseThrow());
+
+        filter.doFilter(request, new MockHttpServletResponse(), chain);
+
+        assertEquals("operator", captured.get().principalName());
+        assertEquals("100", captured.get().tenantId());
+        assertEquals("200", captured.get().userId());
+        assertEquals("gateway", captured.get().source());
+        assertFalse(ContextAccessor.current().isPresent());
+    }
+
+    @Test
+    void shouldAuthenticateIntegrationRequestAndKeepBodyReadable() throws Exception {
+        GatewayAuthClient authClient = mock(GatewayAuthClient.class);
+        GatewayChannelAuthClient channelAuthClient = mock(GatewayChannelAuthClient.class);
+        when(channelAuthClient.authenticate(any())).thenReturn(AuthIdentityDTO.builder()
+                .subjectType("CLIENT").subjectId("ch_abcdefghijklmnopqrstuv")
+                .clientId("ch_abcdefghijklmnopqrstuv").tokenKind("CHANNEL_HMAC")
+                .ownerAccountId(100L).credentialVersion(1L).authorizedScope("integration:access").build());
+        HandlerExceptionResolver resolver = mock(HandlerExceptionResolver.class);
+        GatewayAuthFilter filter = new GatewayAuthFilter(authClient, channelAuthClient, resolver);
+        byte[] body = "{\"orderId\":1}".getBytes(StandardCharsets.UTF_8);
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/integration/orders");
+        request.setContentType("application/json; charset=UTF-8");
+        request.setContent(body);
+        request.addHeader(ChannelCanonicalRequest.CHANNEL_CODE_HEADER, "ch_abcdefghijklmnopqrstuv");
+        request.addHeader(ChannelCanonicalRequest.SECRET_VERSION_HEADER, "1");
+        request.addHeader(ChannelCanonicalRequest.TIMESTAMP_HEADER, "1787107200");
+        request.addHeader(ChannelCanonicalRequest.CONTENT_SHA256_HEADER,
+                HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(body)));
+        request.addHeader(ChannelCanonicalRequest.SIGNATURE_HEADER, "1".repeat(64));
+        AtomicReference<RequestContext> context = new AtomicReference<>();
+        AtomicReference<String> forwardedBody = new AtomicReference<>();
+        FilterChain chain = (servletRequest, servletResponse) -> {
+            context.set(ContextAccessor.current().orElseThrow());
+            forwardedBody.set(new String(servletRequest.getInputStream().readAllBytes(), StandardCharsets.UTF_8));
         };
-    }
 
-    static class StubAuthClient extends GatewayAuthClient {
+        filter.doFilter(request, new MockHttpServletResponse(), chain);
 
-        private final AuthIdentityDTO identity;
-
-        StubAuthClient(AuthIdentityDTO identity) {
-            this.identity = identity;
-        }
-
-        @Override
-        public AuthIdentityDTO validate(String accessToken) {
-            return identity;
-        }
+        verify(channelAuthClient).authenticate(argThat(rpc -> rpc.getCanonicalRequest().split("\\n", -1).length == 8));
+        verifyNoInteractions(authClient);
+        assertEquals("{\"orderId\":1}", forwardedBody.get());
+        assertEquals("100", context.get().ownerAccountId());
+        assertEquals("integration:access", context.get().authorizedScope());
+        assertEquals("1", context.get().credentialVersion());
     }
 }

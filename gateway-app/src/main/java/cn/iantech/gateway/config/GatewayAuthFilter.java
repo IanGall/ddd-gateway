@@ -1,6 +1,7 @@
 package cn.iantech.gateway.config;
 
 import cn.iantech.api.model.auth.AuthIdentityDTO;
+import cn.iantech.api.model.channel.ChannelSignatureVerifyReq;
 import cn.iantech.common.constant.Constants;
 import cn.iantech.common.exception.AppException;
 import cn.iantech.context.core.ContextAccessor;
@@ -8,7 +9,7 @@ import cn.iantech.context.core.ContextScope;
 import cn.iantech.context.core.ContextValidator;
 import cn.iantech.context.core.RequestContext;
 import cn.iantech.gateway.service.GatewayAuthClient;
-import cn.iantech.gateway.service.GatewayOAuthClient;
+import cn.iantech.gateway.service.GatewayChannelAuthClient;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -25,7 +26,7 @@ import java.io.IOException;
 import java.util.UUID;
 
 /**
- * 每个受保护请求通过 RBAC Auth RPC 校验 opaque Bearer Token，并建立可信请求上下文。
+ * 管理端与移动端校验 opaque Bearer Token，渠道业务请求校验 HMAC，并建立可信请求上下文。
  */
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE + 100)
@@ -36,7 +37,7 @@ public class GatewayAuthFilter extends OncePerRequestFilter {
     public static final String REQUEST_ID_HEADER = "X-Request-Id";
 
     private final GatewayAuthClient authClient;
-    private final GatewayOAuthClient oauthClient;
+    private final GatewayChannelAuthClient channelAuthClient;
     private final HandlerExceptionResolver handlerExceptionResolver;
 
     public GatewayAuthFilter(GatewayAuthClient authClient,
@@ -45,10 +46,10 @@ public class GatewayAuthFilter extends OncePerRequestFilter {
     }
 
     @org.springframework.beans.factory.annotation.Autowired
-    public GatewayAuthFilter(GatewayAuthClient authClient, GatewayOAuthClient oauthClient,
+    public GatewayAuthFilter(GatewayAuthClient authClient, GatewayChannelAuthClient channelAuthClient,
                              @Qualifier("handlerExceptionResolver") HandlerExceptionResolver handlerExceptionResolver) {
         this.authClient = authClient;
-        this.oauthClient = oauthClient;
+        this.channelAuthClient = channelAuthClient;
         this.handlerExceptionResolver = handlerExceptionResolver;
     }
 
@@ -75,6 +76,11 @@ public class GatewayAuthFilter extends OncePerRequestFilter {
             return;
         }
 
+        if (isIntegrationRequest(request)) {
+            authenticateIntegration(request, response, filterChain, requestId);
+            return;
+        }
+
         String accessToken = bearerToken(request.getHeader("Authorization"));
         if (accessToken == null) {
             resolveException(request, response, authRequired("需要认证"));
@@ -85,23 +91,8 @@ public class GatewayAuthFilter extends OncePerRequestFilter {
         try {
             identity = authClient.validate(accessToken);
         } catch (RuntimeException exception) {
-            if (oauthClient == null || !accessToken.startsWith("oa_")) {
-                resolveException(request, response, exception);
-                return;
-            }
-            try {
-                var introspected = oauthClient.introspect(accessToken);
-                if (!introspected.isActive()) {
-                    resolveException(request, response, authRequired("认证令牌无效或已过期"));
-                    return;
-                }
-                identity = AuthIdentityDTO.builder().subjectType(introspected.getSubjectType()).subjectId(introspected.getSubjectId())
-                        .clientId(introspected.getClientId()).scopes(introspected.getScope() == null ? java.util.List.of() : java.util.List.of(introspected.getScope().split(" ")))
-                        .tokenKind("OAUTH2").sessionId(accessToken).username(introspected.getSubjectId()).build();
-            } catch (RuntimeException oauthException) {
-                resolveException(request, response, oauthException);
-                return;
-            }
+            resolveException(request, response, exception);
+            return;
         }
         normalizeIdentity(identity);
         if (!validIdentity(identity)) {
@@ -111,12 +102,50 @@ public class GatewayAuthFilter extends OncePerRequestFilter {
 
         request.setAttribute(IDENTITY_ATTRIBUTE, identity);
         request.setAttribute(ACCESS_TOKEN_ATTRIBUTE, accessToken);
+        continueWithIdentity(request, response, filterChain, requestId, identity);
+    }
+
+    private void authenticateIntegration(HttpServletRequest request, HttpServletResponse response,
+                                         FilterChain filterChain, String requestId) throws IOException, ServletException {
+        if (channelAuthClient == null) {
+            resolveException(request, response, new AppException(Constants.ResponseCode.AUTH_UNAVAILABLE.getCode(),
+                    Constants.ResponseCode.AUTH_UNAVAILABLE.getInfo()));
+            return;
+        }
+        try {
+            CachedBodyHttpServletRequest wrapped = new CachedBodyHttpServletRequest(request,
+                    ChannelCanonicalRequest.MAX_BODY_BYTES);
+            ChannelCanonicalRequest.Material material = ChannelCanonicalRequest.create(wrapped, wrapped.body());
+            ChannelSignatureVerifyReq rpcRequest = new ChannelSignatureVerifyReq();
+            rpcRequest.setChannelCode(material.channelCode());
+            rpcRequest.setSecretVersion(material.secretVersion());
+            rpcRequest.setTimestamp(material.timestamp());
+            rpcRequest.setSignature(material.signature());
+            rpcRequest.setCanonicalRequest(material.canonicalRequest());
+            AuthIdentityDTO identity = channelAuthClient.authenticate(rpcRequest);
+            if (!validIdentity(identity)) {
+                resolveException(request, response, authRequired("渠道认证失败"));
+                return;
+            }
+            wrapped.setAttribute(IDENTITY_ATTRIBUTE, identity);
+            continueWithIdentity(wrapped, response, filterChain, requestId, identity);
+        } catch (CachedBodyHttpServletRequest.ChannelPayloadTooLargeException exception) {
+            resolveException(request, response, exception);
+        } catch (RuntimeException exception) {
+            resolveException(request, response, exception);
+        }
+    }
+
+    private void continueWithIdentity(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain,
+                                      String requestId, AuthIdentityDTO identity) throws IOException, ServletException {
         RequestContext context = new RequestContext(requestId, identity.getUsername(),
                 stringValue(identity.getAccountId()), stringValue(identity.getUserId()), identity.getSubjectType(),
-                identity.getClientId(), null, "gateway", null);
+                identity.getClientId(), null, "gateway", null, stringValue(identity.getOwnerAccountId()),
+                identity.getAuthorizedScope(), stringValue(identity.getCredentialVersion()));
         try (ContextScope ignored = ContextAccessor.open(context)) {
             if (!allowedRoute(request, identity)) {
-                resolveException(request, response, new AppException(Constants.ResponseCode.ACCESS_DENIED.getCode(), "主体类型无权访问该资源"));
+                resolveException(request, response, new AppException(Constants.ResponseCode.ACCESS_DENIED.getCode(),
+                        "主体类型无权访问该资源"));
                 return;
             }
             filterChain.doFilter(request, response);
@@ -129,6 +158,11 @@ public class GatewayAuthFilter extends OncePerRequestFilter {
                 || path.equals("/auth/sessions") || path.startsWith("/auth/sessions/");
     }
 
+    private boolean isIntegrationRequest(HttpServletRequest request) {
+        String path = request.getRequestURI().substring(request.getContextPath().length());
+        return path.equals("/api/integration") || path.startsWith("/api/integration/");
+    }
+
     private String bearerToken(String authorization) {
         if (authorization == null || !authorization.startsWith("Bearer ")) {
             return null;
@@ -139,23 +173,28 @@ public class GatewayAuthFilter extends OncePerRequestFilter {
 
     private boolean allowedRoute(HttpServletRequest request, AuthIdentityDTO identity) {
         String path = request.getRequestURI().substring(request.getContextPath().length());
-        if (path.startsWith("/api/admin/"))
-            return identity.getSubjectType() != null && identity.getSubjectType().startsWith("ADMIN_");
-        if (path.startsWith("/api/mobile/")) return "CUSTOMER".equals(identity.getSubjectType());
-        if (path.startsWith("/api/integration/")) return "CLIENT".equals(identity.getSubjectType());
-        return true;
+        return switch (identity.getSubjectType()) {
+            case "ADMIN_PRIMARY", "ADMIN_SUB_ACCOUNT" -> !path.startsWith("/api/mobile/")
+                    && !path.startsWith("/api/integration/");
+            case "CUSTOMER" -> path.startsWith("/api/mobile/");
+            case "CLIENT" -> (path.equals("/api/integration") || path.startsWith("/api/integration/"))
+                    && "CHANNEL_HMAC".equals(identity.getTokenKind());
+            default -> false;
+        };
     }
 
     private boolean validIdentity(AuthIdentityDTO identity) {
         if (identity == null || isBlank(identity.getSubjectType()) || isBlank(identity.getSubjectId())
-                || isBlank(identity.getTokenKind()) || isBlank(identity.getSessionId())) {
+                || isBlank(identity.getTokenKind())) {
             return false;
         }
         return switch (identity.getSubjectType()) {
             case "ADMIN_PRIMARY", "ADMIN_SUB_ACCOUNT" ->
-                    identity.getAccountId() != null && identity.getUserId() != null;
-            case "CUSTOMER" -> identity.getUserId() != null || "OAUTH2".equals(identity.getTokenKind());
-            case "CLIENT" -> !isBlank(identity.getClientId());
+                    identity.getAccountId() != null && identity.getUserId() != null && !isBlank(identity.getSessionId());
+            case "CUSTOMER" -> identity.getUserId() != null && !isBlank(identity.getSessionId());
+            case "CLIENT" -> !isBlank(identity.getClientId()) && "CHANNEL_HMAC".equals(identity.getTokenKind())
+                    && identity.getOwnerAccountId() != null && identity.getCredentialVersion() != null
+                    && "integration:access".equals(identity.getAuthorizedScope());
             default -> false;
         };
     }

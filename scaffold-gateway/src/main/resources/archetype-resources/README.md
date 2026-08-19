@@ -39,6 +39,11 @@ Nacos 用户名密码认证。
 
 登录限流或临时锁定统一返回 `AUTH_RATE_LIMITED` 和 HTTP 429，不暴露具体触发条件。
 
+`/api/integration/**` 使用渠道 HMAC，不使用 Bearer Token。请求头固定为 `X-Channel-Code`、
+`X-Channel-Secret-Version`、`X-Channel-Timestamp`、`X-Channel-Content-SHA256` 和 `X-Channel-Signature`。 Canonical Request
+按 Method、Path、Query、Content-Type、渠道编码、密钥版本、时间戳和 Body SHA-256 八行组成， 签名算法固定为 HMAC-SHA256。请求体最大
+1 MiB，时间窗为前后 300 秒；相同签名只能成功一次，重试必须更新时间戳并重新签名。
+
 认证 RPC 的异常由 `GatewayAuthClient` 沿 cause 链保留 `AppException`，未声明的 RPC 失败统一转换为
 `AUTH_UNAVAILABLE`。过滤器将异常委托给唯一的 `GatewayExceptionHandler`，由 `Constants.ResponseCode` 统一决定 HTTP 状态和
 `data: null` 响应；不要在过滤器或控制器中手写 JSON、解析 Dubbo `GenericException` 或重复维护状态码映射。

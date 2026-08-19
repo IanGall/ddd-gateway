@@ -3,6 +3,7 @@ package ${package}.exception;
 import cn.iantech.common.constant.Constants;
 import cn.iantech.common.exception.AppException;
 import cn.iantech.common.model.Response;
+import ${package}.config.CachedBodyHttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,7 +19,6 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import static cn.iantech.common.constant.Constants.ResponseCode.INTERNAL_ERROR;
 import static cn.iantech.common.constant.Constants.ResponseCode.INVALID_ARGUMENT;
 
-/** 网关唯一异常出口，统一维护语义码到 HTTP 状态码的映射。 */
 @RestControllerAdvice
 public class GatewayExceptionHandler {
 
@@ -41,6 +41,13 @@ public class GatewayExceptionHandler {
     public ResponseEntity<Response<Void>> handleValidationException(Exception exception) {
         log.debug("网关请求参数校验失败: type={}", exception.getClass().getName());
         return response(INVALID_ARGUMENT);
+    }
+
+    @ExceptionHandler(CachedBodyHttpServletRequest.ChannelPayloadTooLargeException.class)
+    public ResponseEntity<Response<Void>> handlePayloadTooLarge() {
+        return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
+                .body(Response.<Void>builder().code("PAYLOAD_TOO_LARGE")
+                        .info("渠道请求体不能超过 1 MiB").data(null).build());
     }
 
     @ExceptionHandler(Exception.class)

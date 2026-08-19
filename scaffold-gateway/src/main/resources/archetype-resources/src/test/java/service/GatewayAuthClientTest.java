@@ -11,6 +11,7 @@ import cn.iantech.api.model.auth.AuthSessionDTO;
 import cn.iantech.api.model.auth.AuthSessionQueryReq;
 import cn.iantech.api.model.auth.AuthTokenDTO;
 import cn.iantech.api.model.auth.AuthValidateReq;
+import cn.iantech.api.model.customer.CustomerLoginReq;
 import cn.iantech.common.constant.Constants;
 import cn.iantech.common.exception.AppException;
 import org.apache.dubbo.rpc.RpcException;
@@ -71,6 +72,11 @@ class GatewayAuthClientTest {
 
         @Override
         public AuthTokenDTO login(AuthLoginReq req) {
+            throw failure;
+        }
+
+        @Override
+        public AuthTokenDTO customerLogin(CustomerLoginReq req) {
             throw failure;
         }
 
