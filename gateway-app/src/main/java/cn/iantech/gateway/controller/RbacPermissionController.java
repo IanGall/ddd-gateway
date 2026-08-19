@@ -1,15 +1,14 @@
 package cn.iantech.gateway.controller;
 
-import cn.iantech.api.IRbacService;
 import cn.iantech.api.model.rbac.*;
 import cn.iantech.common.model.Response;
 import cn.iantech.gateway.model.RbacWebRequests;
+import cn.iantech.gateway.service.GatewayRbacClient;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
-import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,8 +19,11 @@ import static cn.iantech.gateway.model.GatewayResponses.success;
 @RequestMapping("/api/rbac/permissions")
 public class RbacPermissionController {
 
-    @DubboReference(version = "1.0.0", protocol = "tri", timeout = 10000, retries = 0, check = false)
-    private IRbacService rbacService;
+    private final GatewayRbacClient rbacClient;
+
+    public RbacPermissionController(GatewayRbacClient rbacClient) {
+        this.rbacClient = rbacClient;
+    }
 
     @PostMapping
     public Response<RbacPermissionDTO> createPermission(@Valid @RequestBody RbacWebRequests.CreatePermission request) {
@@ -34,13 +36,13 @@ public class RbacPermissionController {
                 .method(request.method())
                 .status(request.status())
                 .build();
-        return success(rbacService.createPermission(rpcRequest));
+        return success(rbacClient.createPermission(rpcRequest));
     }
 
     @GetMapping("/{id}")
     public Response<RbacPermissionDTO> queryPermissionById(
             @Positive(message = "权限ID必须大于0") @PathVariable("id") Long id) {
-        return success(rbacService.queryPermissionById(id));
+        return success(rbacClient.queryPermissionById(id));
     }
 
     @GetMapping
@@ -62,7 +64,7 @@ public class RbacPermissionController {
                 .parentId(parentId)
                 .status(status)
                 .build();
-        return success(rbacService.queryPermissionPage(rpcRequest));
+        return success(rbacClient.queryPermissionPage(rpcRequest));
     }
 
     @PutMapping("/{id}")
@@ -78,12 +80,12 @@ public class RbacPermissionController {
                 .method(request.method())
                 .status(request.status())
                 .build();
-        return success(rbacService.updatePermission(rpcRequest));
+        return success(rbacClient.updatePermission(rpcRequest));
     }
 
     @DeleteMapping("/{id}")
     public Response<Boolean> deletePermission(@Positive(message = "权限ID必须大于0") @PathVariable("id") Long id) {
-        return success(rbacService.deletePermission(DeleteRbacPermissionReq.builder().id(id).build()));
+        return success(rbacClient.deletePermission(DeleteRbacPermissionReq.builder().id(id).build()));
     }
 
 }

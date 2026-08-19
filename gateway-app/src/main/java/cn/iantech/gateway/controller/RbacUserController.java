@@ -1,15 +1,14 @@
 package cn.iantech.gateway.controller;
 
-import cn.iantech.api.IRbacService;
 import cn.iantech.api.model.rbac.*;
 import cn.iantech.common.model.Response;
 import cn.iantech.gateway.model.RbacWebRequests;
+import cn.iantech.gateway.service.GatewayRbacClient;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
-import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,8 +19,11 @@ import static cn.iantech.gateway.model.GatewayResponses.success;
 @RequestMapping("/api/rbac/users")
 public class RbacUserController {
 
-    @DubboReference(version = "1.0.0", protocol = "tri", timeout = 10000, retries = 0, check = false)
-    private IRbacService rbacService;
+    private final GatewayRbacClient rbacClient;
+
+    public RbacUserController(GatewayRbacClient rbacClient) {
+        this.rbacClient = rbacClient;
+    }
 
     @PostMapping
     public Response<RbacUserDTO> createUser(@Valid @RequestBody RbacWebRequests.CreateUser request) {
@@ -33,12 +35,12 @@ public class RbacUserController {
                 .mobile(request.mobile())
                 .status(request.status())
                 .build();
-        return success(rbacService.createUser(rpcRequest));
+        return success(rbacClient.createUser(rpcRequest));
     }
 
     @GetMapping("/{id}")
     public Response<RbacUserDTO> queryUserById(@Positive(message = "用户ID必须大于0") @PathVariable("id") Long id) {
-        return success(rbacService.queryUserById(id));
+        return success(rbacClient.queryUserById(id));
     }
 
     @GetMapping
@@ -54,7 +56,7 @@ public class RbacUserController {
                 .username(username)
                 .status(status)
                 .build();
-        return success(rbacService.queryUserPage(rpcRequest));
+        return success(rbacClient.queryUserPage(rpcRequest));
     }
 
     @PutMapping("/{id}")
@@ -69,13 +71,13 @@ public class RbacUserController {
                 .mobile(request.mobile())
                 .status(request.status())
                 .build();
-        RbacUserDTO updated = rbacService.updateUser(rpcRequest);
+        RbacUserDTO updated = rbacClient.updateUser(rpcRequest);
         return success(updated);
     }
 
     @DeleteMapping("/{id}")
     public Response<Boolean> deleteUser(@Positive(message = "用户ID必须大于0") @PathVariable("id") Long id) {
-        Boolean deleted = rbacService.deleteUser(DeleteRbacUserReq.builder().id(id).build());
+        Boolean deleted = rbacClient.deleteUser(DeleteRbacUserReq.builder().id(id).build());
         return success(deleted);
     }
 

@@ -4,7 +4,6 @@ import cn.iantech.common.constant.Constants;
 import cn.iantech.common.exception.AppException;
 import cn.iantech.common.model.Response;
 import jakarta.validation.ConstraintViolationException;
-import org.apache.dubbo.rpc.RpcException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -18,7 +17,6 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 
 import static cn.iantech.common.constant.Constants.ResponseCode.INTERNAL_ERROR;
 import static cn.iantech.common.constant.Constants.ResponseCode.INVALID_ARGUMENT;
-import static cn.iantech.common.constant.Constants.ResponseCode.RPC_ERROR;
 
 /** 网关唯一异常出口，统一维护语义码到 HTTP 状态码的映射。 */
 @RestControllerAdvice
@@ -43,11 +41,6 @@ public class GatewayExceptionHandler {
     public ResponseEntity<Response<Void>> handleValidationException(Exception exception) {
         log.debug("网关请求参数校验失败: type={}", exception.getClass().getName());
         return response(INVALID_ARGUMENT);
-    }
-
-    @ExceptionHandler(RpcException.class)
-    public ResponseEntity<Response<Void>> handleRpcException(RpcException exception) {
-        return handleAppException((AppException) GatewayRpcExceptionTranslator.translate(exception, RPC_ERROR));
     }
 
     @ExceptionHandler(Exception.class)

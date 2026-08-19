@@ -1,30 +1,16 @@
 package cn.iantech.gateway.controller;
 
-import cn.iantech.api.IRbacService;
-import cn.iantech.api.model.rbac.CreateRbacRoleReq;
-import cn.iantech.api.model.rbac.DeleteRbacRoleReq;
-import cn.iantech.api.model.rbac.QueryRbacRolePageReq;
-import cn.iantech.api.model.rbac.RbacRoleDTO;
-import cn.iantech.api.model.rbac.RbacRolePageDTO;
-import cn.iantech.api.model.rbac.UpdateRbacRoleReq;
+import cn.iantech.api.model.rbac.*;
 import cn.iantech.common.model.Response;
 import cn.iantech.gateway.model.RbacWebRequests;
+import cn.iantech.gateway.service.GatewayRbacClient;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
-import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import static cn.iantech.gateway.model.GatewayResponses.success;
 
@@ -33,8 +19,11 @@ import static cn.iantech.gateway.model.GatewayResponses.success;
 @RequestMapping("/api/rbac/roles")
 public class RbacRoleController {
 
-    @DubboReference(version = "1.0.0", protocol = "tri", timeout = 10000, retries = 0, check = false)
-    private IRbacService rbacService;
+    private final GatewayRbacClient rbacClient;
+
+    public RbacRoleController(GatewayRbacClient rbacClient) {
+        this.rbacClient = rbacClient;
+    }
 
     @PostMapping
     public Response<RbacRoleDTO> createRole(@Valid @RequestBody RbacWebRequests.CreateRole request) {
@@ -44,12 +33,12 @@ public class RbacRoleController {
                 .roleDesc(request.roleDesc())
                 .status(request.status())
                 .build();
-        return success(rbacService.createRole(rpcRequest));
+        return success(rbacClient.createRole(rpcRequest));
     }
 
     @GetMapping("/{id}")
     public Response<RbacRoleDTO> queryRoleById(@Positive(message = "角色ID必须大于0") @PathVariable("id") Long id) {
-        return success(rbacService.queryRoleById(id));
+        return success(rbacClient.queryRoleById(id));
     }
 
     @GetMapping
@@ -67,7 +56,7 @@ public class RbacRoleController {
                 .roleName(roleName)
                 .status(status)
                 .build();
-        return success(rbacService.queryRolePage(rpcRequest));
+        return success(rbacClient.queryRolePage(rpcRequest));
     }
 
     @PutMapping("/{id}")
@@ -81,12 +70,12 @@ public class RbacRoleController {
                 .roleDesc(request.roleDesc())
                 .status(request.status())
                 .build();
-        return success(rbacService.updateRole(rpcRequest));
+        return success(rbacClient.updateRole(rpcRequest));
     }
 
     @DeleteMapping("/{id}")
     public Response<Boolean> deleteRole(@Positive(message = "角色ID必须大于0") @PathVariable("id") Long id) {
-        return success(rbacService.deleteRole(DeleteRbacRoleReq.builder().id(id).build()));
+        return success(rbacClient.deleteRole(DeleteRbacRoleReq.builder().id(id).build()));
     }
 
 }

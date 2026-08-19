@@ -3,7 +3,6 @@ package cn.iantech.gateway.exception;
 import cn.iantech.common.constant.Constants;
 import cn.iantech.common.exception.AppException;
 import cn.iantech.common.model.Response;
-import org.apache.dubbo.rpc.RpcException;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -78,15 +77,6 @@ class GatewayExceptionHandlerTest {
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertEquals(Constants.ResponseCode.INVALID_ARGUMENT.getCode(), response.getBody().getCode());
         assertEquals(Constants.ResponseCode.INVALID_ARGUMENT.getInfo(), response.getBody().getInfo());
-    }
-
-    @Test
-    void shouldMapRawRpcTimeoutThroughSharedTranslator() {
-        ResponseEntity<Response<Void>> response = handler.handleRpcException(
-                new RpcException(RpcException.TIMEOUT_EXCEPTION, "timeout"));
-
-        assertEquals(HttpStatus.GATEWAY_TIMEOUT, response.getStatusCode());
-        assertEquals(Constants.ResponseCode.RPC_TIMEOUT.getCode(), response.getBody().getCode());
     }
 
 }
