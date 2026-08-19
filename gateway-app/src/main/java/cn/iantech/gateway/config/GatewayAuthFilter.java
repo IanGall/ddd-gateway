@@ -8,6 +8,7 @@ import cn.iantech.context.core.ContextScope;
 import cn.iantech.context.core.ContextValidator;
 import cn.iantech.context.core.RequestContext;
 import cn.iantech.gateway.service.GatewayAuthClient;
+import cn.iantech.gateway.service.GatewayOAuthClient;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -35,11 +36,19 @@ public class GatewayAuthFilter extends OncePerRequestFilter {
     public static final String REQUEST_ID_HEADER = "X-Request-Id";
 
     private final GatewayAuthClient authClient;
+    private final GatewayOAuthClient oauthClient;
     private final HandlerExceptionResolver handlerExceptionResolver;
 
     public GatewayAuthFilter(GatewayAuthClient authClient,
                              @Qualifier("handlerExceptionResolver") HandlerExceptionResolver handlerExceptionResolver) {
+        this(authClient, null, handlerExceptionResolver);
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public GatewayAuthFilter(GatewayAuthClient authClient, GatewayOAuthClient oauthClient,
+                             @Qualifier("handlerExceptionResolver") HandlerExceptionResolver handlerExceptionResolver) {
         this.authClient = authClient;
+        this.oauthClient = oauthClient;
         this.handlerExceptionResolver = handlerExceptionResolver;
     }
 
@@ -60,7 +69,7 @@ public class GatewayAuthFilter extends OncePerRequestFilter {
         response.setHeader(REQUEST_ID_HEADER, requestId);
         if (!requiresAuthentication(request)) {
             try (ContextScope ignored = ContextAccessor.open(new RequestContext(requestId, null, null, null,
-                    null, "gateway", null))) {
+                    null, null, null, "gateway", null))) {
                 filterChain.doFilter(request, response);
             }
             return;
@@ -76,9 +85,25 @@ public class GatewayAuthFilter extends OncePerRequestFilter {
         try {
             identity = authClient.validate(accessToken);
         } catch (RuntimeException exception) {
-            resolveException(request, response, exception);
-            return;
+            if (oauthClient == null || !accessToken.startsWith("oa_")) {
+                resolveException(request, response, exception);
+                return;
+            }
+            try {
+                var introspected = oauthClient.introspect(accessToken);
+                if (!introspected.isActive()) {
+                    resolveException(request, response, authRequired("认证令牌无效或已过期"));
+                    return;
+                }
+                identity = AuthIdentityDTO.builder().subjectType(introspected.getSubjectType()).subjectId(introspected.getSubjectId())
+                        .clientId(introspected.getClientId()).scopes(introspected.getScope() == null ? java.util.List.of() : java.util.List.of(introspected.getScope().split(" ")))
+                        .tokenKind("OAUTH2").sessionId(accessToken).username(introspected.getSubjectId()).build();
+            } catch (RuntimeException oauthException) {
+                resolveException(request, response, oauthException);
+                return;
+            }
         }
+        normalizeIdentity(identity);
         if (!validIdentity(identity)) {
             resolveException(request, response, authRequired("认证令牌无效或已过期"));
             return;
@@ -87,8 +112,13 @@ public class GatewayAuthFilter extends OncePerRequestFilter {
         request.setAttribute(IDENTITY_ATTRIBUTE, identity);
         request.setAttribute(ACCESS_TOKEN_ATTRIBUTE, accessToken);
         RequestContext context = new RequestContext(requestId, identity.getUsername(),
-                String.valueOf(identity.getAccountId()), String.valueOf(identity.getUserId()), null, "gateway", null);
+                stringValue(identity.getAccountId()), stringValue(identity.getUserId()), identity.getSubjectType(),
+                identity.getClientId(), null, "gateway", null);
         try (ContextScope ignored = ContextAccessor.open(context)) {
+            if (!allowedRoute(request, identity)) {
+                resolveException(request, response, new AppException(Constants.ResponseCode.ACCESS_DENIED.getCode(), "主体类型无权访问该资源"));
+                return;
+            }
             filterChain.doFilter(request, response);
         }
     }
@@ -107,10 +137,41 @@ public class GatewayAuthFilter extends OncePerRequestFilter {
         return token.isBlank() ? null : token;
     }
 
+    private boolean allowedRoute(HttpServletRequest request, AuthIdentityDTO identity) {
+        String path = request.getRequestURI().substring(request.getContextPath().length());
+        if (path.startsWith("/api/admin/"))
+            return identity.getSubjectType() != null && identity.getSubjectType().startsWith("ADMIN_");
+        if (path.startsWith("/api/mobile/")) return "CUSTOMER".equals(identity.getSubjectType());
+        if (path.startsWith("/api/integration/")) return "CLIENT".equals(identity.getSubjectType());
+        return true;
+    }
+
     private boolean validIdentity(AuthIdentityDTO identity) {
-        return identity != null && identity.getAccountId() != null && identity.getUserId() != null
-                && !isBlank(identity.getUsername()) && !isBlank(identity.getUserType())
-                && !isBlank(identity.getSessionId());
+        if (identity == null || isBlank(identity.getSubjectType()) || isBlank(identity.getSubjectId())
+                || isBlank(identity.getTokenKind()) || isBlank(identity.getSessionId())) {
+            return false;
+        }
+        return switch (identity.getSubjectType()) {
+            case "ADMIN_PRIMARY", "ADMIN_SUB_ACCOUNT" ->
+                    identity.getAccountId() != null && identity.getUserId() != null;
+            case "CUSTOMER" -> identity.getUserId() != null || "OAUTH2".equals(identity.getTokenKind());
+            case "CLIENT" -> !isBlank(identity.getClientId());
+            default -> false;
+        };
+    }
+
+    private void normalizeIdentity(AuthIdentityDTO identity) {
+        if (identity == null) return;
+        if (isBlank(identity.getSubjectType()) && identity.getUserType() != null) {
+            identity.setSubjectType("PRIMARY".equals(identity.getUserType()) ? "ADMIN_PRIMARY" : "ADMIN_SUB_ACCOUNT");
+        }
+        if (isBlank(identity.getSubjectId()) && identity.getUserId() != null)
+            identity.setSubjectId(String.valueOf(identity.getUserId()));
+        if (isBlank(identity.getTokenKind())) identity.setTokenKind("OPAQUE");
+    }
+
+    private String stringValue(Long value) {
+        return value == null ? null : String.valueOf(value);
     }
 
     private boolean isBlank(String value) {

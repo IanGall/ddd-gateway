@@ -5,6 +5,7 @@ import cn.iantech.api.model.auth.AuthRefreshReq;
 import cn.iantech.api.model.auth.AuthSessionDTO;
 import cn.iantech.api.model.auth.AuthTokenDTO;
 import cn.iantech.api.model.auth.AuthIdentityDTO;
+import cn.iantech.api.model.customer.CustomerLoginReq;
 import cn.iantech.common.constant.Constants;
 import cn.iantech.common.exception.AppException;
 import cn.iantech.common.model.Response;
@@ -53,6 +54,19 @@ public class GatewayAuthController {
             throw new AppException(Constants.ResponseCode.AUTH_REQUIRED.getCode(), "账号或密码错误");
         }
         return success(toResponse(issued));
+    }
+
+    @PostMapping("/mobile-login")
+    public Response<TokenResponse> mobileLogin(@Valid @RequestBody MobileLoginRequest request,
+                                               HttpServletRequest servletRequest) {
+        CustomerLoginReq login = new CustomerLoginReq();
+        login.setMobile(request.mobile());
+        login.setPassword(request.password());
+        login.setClientType(limited(request.clientType(), 32));
+        login.setDeviceId(limited(request.deviceId(), 128));
+        login.setIpAddress(limited(servletRequest.getRemoteAddr(), 64));
+        login.setUserAgent(limited(servletRequest.getHeader("User-Agent"), 256));
+        return success(toResponse(authClient.customerLogin(login)));
     }
 
     @PostMapping("/refresh")
@@ -118,6 +132,13 @@ public class GatewayAuthController {
     public record RefreshRequest(
             @NotBlank(message = "刷新令牌不能为空") @Size(max = 256, message = "刷新令牌长度不能超过256")
             @Pattern(regexp = "[A-Za-z0-9_-]+", message = "刷新令牌格式不正确") String refreshToken,
+            @Size(max = 32, message = "客户端类型长度不能超过32") String clientType,
+            @Size(max = 128, message = "设备ID长度不能超过128") String deviceId) {
+    }
+
+    public record MobileLoginRequest(
+            @NotBlank(message = "手机号不能为空") @Size(max = 32, message = "手机号长度不能超过32") String mobile,
+            @NotBlank(message = "密码不能为空") @Size(min = 8, max = 72, message = "密码长度必须为8到72位") String password,
             @Size(max = 32, message = "客户端类型长度不能超过32") String clientType,
             @Size(max = 128, message = "设备ID长度不能超过128") String deviceId) {
     }

@@ -77,6 +77,7 @@ public class GatewayAuthFilter extends OncePerRequestFilter {
             resolveException(request, response, exception);
             return;
         }
+        normalizeIdentity(identity);
         if (!validIdentity(identity)) {
             resolveException(request, response, authRequired("认证令牌无效或已过期"));
             return;
@@ -85,8 +86,8 @@ public class GatewayAuthFilter extends OncePerRequestFilter {
         request.setAttribute(IDENTITY_ATTRIBUTE, identity);
         request.setAttribute(ACCESS_TOKEN_ATTRIBUTE, accessToken);
         RequestContext context = new RequestContext(requestId, identity.getUsername(),
-                String.valueOf(identity.getAccountId()), String.valueOf(identity.getUserId()),
-                null, "gateway", null);
+                stringValue(identity.getAccountId()), stringValue(identity.getUserId()), identity.getSubjectType(),
+                identity.getClientId(), null, "gateway", null);
         try (ContextScope ignored = ContextAccessor.open(context)) {
             filterChain.doFilter(request, response);
         }
@@ -107,9 +108,31 @@ public class GatewayAuthFilter extends OncePerRequestFilter {
     }
 
     private boolean validIdentity(AuthIdentityDTO identity) {
-        return identity != null && identity.getAccountId() != null && identity.getUserId() != null
-                && !isBlank(identity.getUsername()) && !isBlank(identity.getUserType())
-                && !isBlank(identity.getSessionId());
+        if (identity == null || isBlank(identity.getSubjectType()) || isBlank(identity.getSubjectId())
+                || isBlank(identity.getTokenKind()) || isBlank(identity.getSessionId())) {
+            return false;
+        }
+        return switch (identity.getSubjectType()) {
+            case "ADMIN_PRIMARY", "ADMIN_SUB_ACCOUNT" -> identity.getAccountId() != null && identity.getUserId() != null;
+            case "CUSTOMER" -> identity.getUserId() != null || "OAUTH2".equals(identity.getTokenKind());
+            case "CLIENT" -> !isBlank(identity.getClientId());
+            default -> false;
+        };
+    }
+
+    private void normalizeIdentity(AuthIdentityDTO identity) {
+        if (identity == null) return;
+        if (isBlank(identity.getSubjectType()) && identity.getUserType() != null) {
+            identity.setSubjectType("PRIMARY".equals(identity.getUserType()) ? "ADMIN_PRIMARY" : "ADMIN_SUB_ACCOUNT");
+        }
+        if (isBlank(identity.getSubjectId()) && identity.getUserId() != null) {
+            identity.setSubjectId(String.valueOf(identity.getUserId()));
+        }
+        if (isBlank(identity.getTokenKind())) identity.setTokenKind("OPAQUE");
+    }
+
+    private String stringValue(Long value) {
+        return value == null ? null : String.valueOf(value);
     }
 
     private boolean isBlank(String value) {

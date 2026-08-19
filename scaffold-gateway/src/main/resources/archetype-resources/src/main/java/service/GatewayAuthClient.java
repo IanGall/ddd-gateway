@@ -11,6 +11,7 @@ import cn.iantech.api.model.auth.AuthSessionDTO;
 import cn.iantech.api.model.auth.AuthSessionQueryReq;
 import cn.iantech.api.model.auth.AuthTokenDTO;
 import cn.iantech.api.model.auth.AuthValidateReq;
+import cn.iantech.api.model.customer.CustomerLoginReq;
 import ${package}.exception.GatewayRpcExceptionTranslator;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.stereotype.Component;
@@ -29,6 +30,10 @@ public class GatewayAuthClient {
 
     public AuthTokenDTO login(AuthLoginReq request) {
         return invoke(() -> authService.login(request));
+    }
+
+    public AuthTokenDTO customerLogin(CustomerLoginReq request) {
+        return invoke(() -> authService.customerLogin(request));
     }
 
     public AuthTokenDTO refresh(AuthRefreshReq request) {
