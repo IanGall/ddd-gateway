@@ -4,6 +4,9 @@ import cn.iantech.api.model.auth.AuthLoginReq;
 import cn.iantech.api.model.auth.AuthRefreshReq;
 import cn.iantech.api.model.auth.AuthSessionDTO;
 import cn.iantech.api.model.auth.AuthTokenDTO;
+import cn.iantech.api.model.auth.AuthIdentityDTO;
+import cn.iantech.common.constant.Constants;
+import cn.iantech.common.exception.AppException;
 import cn.iantech.common.model.Response;
 import ${package}.config.GatewayAuthFilter;
 import ${package}.service.GatewayAuthClient;
@@ -36,26 +39,33 @@ public class GatewayAuthController {
     }
 
     @PostMapping("/login")
-    public Response<AuthTokenDTO> login(@Valid @RequestBody LoginRequest request,
-                                        HttpServletRequest servletRequest) {
-        return success(authClient.login(AuthLoginReq.builder()
+    public Response<TokenResponse> login(@Valid @RequestBody LoginRequest request,
+                                         HttpServletRequest servletRequest) {
+        AuthTokenDTO issued = authClient.login(AuthLoginReq.builder()
                 .loginName(request.loginName())
                 .password(request.password())
-                .clientType(limited(request.clientType(), 64))
+                .clientType(limited(request.clientType(), 32))
                 .deviceId(limited(request.deviceId(), 128))
                 .ipAddress(limited(servletRequest.getRemoteAddr(), 64))
                 .userAgent(limited(servletRequest.getHeader("User-Agent"), 256))
-                .build()));
+                .build());
+        if (issued == null || issued.getIdentity() == null) {
+            throw new AppException(Constants.ResponseCode.AUTH_REQUIRED.getCode(), "账号或密码错误");
+        }
+        return success(toResponse(issued));
     }
 
     @PostMapping("/refresh")
-    public Response<AuthTokenDTO> refresh(@Valid @RequestBody RefreshRequest request,
+    public Response<TokenResponse> refresh(@Valid @RequestBody RefreshRequest request,
                                            HttpServletRequest servletRequest) {
-        return success(authClient.refresh(AuthRefreshReq.builder()
+        AuthTokenDTO issued = authClient.refresh(AuthRefreshReq.builder()
                 .refreshToken(request.refreshToken())
+                .clientType(limited(request.clientType(), 32))
+                .deviceId(limited(request.deviceId(), 128))
                 .ipAddress(limited(servletRequest.getRemoteAddr(), 64))
                 .userAgent(limited(servletRequest.getHeader("User-Agent"), 256))
-                .build()));
+                .build());
+        return success(toResponse(issued));
     }
 
     @PostMapping("/logout")
@@ -85,7 +95,7 @@ public class GatewayAuthController {
     private String requiredAccessToken(HttpServletRequest request) {
         String token = GatewayAuthFilter.accessToken(request);
         if (token == null || token.isBlank()) {
-            throw new IllegalStateException("认证过滤器未建立可信令牌上下文");
+            throw new AppException(Constants.ResponseCode.AUTH_REQUIRED.getCode(), "需要认证");
         }
         return token;
     }
@@ -100,12 +110,34 @@ public class GatewayAuthController {
     public record LoginRequest(
             @NotBlank(message = "登录名不能为空") String loginName,
             @NotBlank(message = "密码不能为空") String password,
-            @Size(max = 64, message = "客户端类型长度不能超过64") String clientType,
+            @Size(max = 32, message = "客户端类型长度不能超过32") String clientType,
             @Size(max = 128, message = "设备ID长度不能超过128") String deviceId) {
     }
 
     public record RefreshRequest(
-            @NotBlank(message = "刷新令牌不能为空") @Size(max = 512, message = "刷新令牌长度不能超过512")
-            @Pattern(regexp = "[A-Za-z0-9_-]+", message = "刷新令牌格式不正确") String refreshToken) {
+            @NotBlank(message = "刷新令牌不能为空") @Size(max = 256, message = "刷新令牌长度不能超过256")
+            @Pattern(regexp = "[A-Za-z0-9_-]+", message = "刷新令牌格式不正确") String refreshToken,
+            @Size(max = 32, message = "客户端类型长度不能超过32") String clientType,
+            @Size(max = 128, message = "设备ID长度不能超过128") String deviceId) {
+    }
+
+    private TokenResponse toResponse(AuthTokenDTO issued) {
+        AuthIdentityDTO identity = issued.getIdentity();
+        return new TokenResponse(issued.getAccessToken(), issued.getRefreshToken(), issued.getTokenType(),
+                issued.getExpiresIn(), issued.getRefreshExpiresIn(), issued.getSessionId(), identity.getUserId(),
+                identity.getAccountId(), identity.getUsername(), identity.getUserType());
+    }
+
+    public record TokenResponse(
+            String accessToken,
+            String refreshToken,
+            String tokenType,
+            long expiresIn,
+            long refreshExpiresIn,
+            String sessionId,
+            Long userId,
+            Long accountId,
+            String username,
+            String userType) {
     }
 }

@@ -40,3 +40,7 @@ opaque Token， 不复制具体 RBAC 管理接口。
 生产环境只需配置 Auth 服务可访问的 Dubbo/Nacos 信息，并通过 `PLATFORM_ADMIN_TOKEN` 保护主账号创建接口。租户边界来自 Auth
 校验后的 主账号 ID，不再使用固定租户配置。Dubbo 消费端使用明文 Triple，注册中心通过
 `DUBBO_REGISTRY_USERNAME` 和 `DUBBO_REGISTRY_PASSWORD` 认证。
+
+认证 RPC 的异常由 `GatewayAuthClient` 沿 cause 链保留 `AppException`，未声明的 RPC 失败统一转换为
+`AUTH_UNAVAILABLE`。过滤器将异常委托给唯一的 `GatewayExceptionHandler`，由语义码统一决定 HTTP 状态和 `data: null`
+响应；业务代码不得手写 JSON、解析 Dubbo `GenericException` 或自行维护状态码映射。

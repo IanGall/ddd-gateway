@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+import static cn.iantech.common.constant.Constants.ResponseCode.AUTH_REQUIRED;
 import static cn.iantech.gateway.model.GatewayResponses.success;
 
 /**
@@ -41,7 +42,7 @@ public class GatewayAuthController {
                 .userAgent(limited(servletRequest.getHeader("User-Agent"), 256))
                 .build());
         if (issued == null || issued.getIdentity() == null) {
-            throw new AppException("AUTH_REQUIRED", "账号或密码错误");
+            throw new AppException(AUTH_REQUIRED.getCode(), "账号或密码错误");
         }
         return success(toResponse(issued));
     }
@@ -87,7 +88,7 @@ public class GatewayAuthController {
     private String requiredAccessToken(HttpServletRequest request) {
         String token = GatewayAuthFilter.accessToken(request);
         if (token == null || token.isBlank()) {
-            throw new AppException("AUTH_REQUIRED", "需要认证");
+            throw new AppException(AUTH_REQUIRED.getCode(), AUTH_REQUIRED.getInfo());
         }
         return token;
     }

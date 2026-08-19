@@ -1,6 +1,7 @@
 package cn.iantech.gateway.config;
 
 import cn.iantech.api.model.auth.AuthIdentityDTO;
+import cn.iantech.common.constant.Constants;
 import cn.iantech.common.exception.AppException;
 import cn.iantech.context.core.ContextAccessor;
 import cn.iantech.context.core.ContextScope;
@@ -11,11 +12,12 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.apache.dubbo.rpc.RpcException;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.web.servlet.HandlerExceptionResolver;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -32,9 +34,12 @@ public class GatewayAuthFilter extends OncePerRequestFilter {
     public static final String REQUEST_ID_HEADER = "X-Request-Id";
 
     private final GatewayAuthClient authClient;
+    private final HandlerExceptionResolver handlerExceptionResolver;
 
-    public GatewayAuthFilter(GatewayAuthClient authClient) {
+    public GatewayAuthFilter(GatewayAuthClient authClient,
+                             @Qualifier("handlerExceptionResolver") HandlerExceptionResolver handlerExceptionResolver) {
         this.authClient = authClient;
+        this.handlerExceptionResolver = handlerExceptionResolver;
     }
 
     public static String accessToken(HttpServletRequest request) {
@@ -62,22 +67,19 @@ public class GatewayAuthFilter extends OncePerRequestFilter {
 
         String accessToken = bearerToken(request.getHeader("Authorization"));
         if (accessToken == null) {
-            writeError(response, HttpServletResponse.SC_UNAUTHORIZED, "AUTH_REQUIRED", "需要认证");
+            resolveException(request, response, authRequired("需要认证"));
             return;
         }
 
         AuthIdentityDTO identity;
         try {
             identity = authClient.validate(accessToken);
-        } catch (AppException exception) {
-            writeError(response, HttpServletResponse.SC_UNAUTHORIZED, "AUTH_REQUIRED", "认证令牌无效或已过期");
-            return;
-        } catch (RpcException exception) {
-            writeError(response, HttpServletResponse.SC_SERVICE_UNAVAILABLE, "AUTH_UNAVAILABLE", "认证服务暂不可用");
+        } catch (RuntimeException exception) {
+            resolveException(request, response, exception);
             return;
         }
         if (!validIdentity(identity)) {
-            writeError(response, HttpServletResponse.SC_UNAUTHORIZED, "AUTH_REQUIRED", "认证令牌无效或已过期");
+            resolveException(request, response, authRequired("认证令牌无效或已过期"));
             return;
         }
 
@@ -119,10 +121,12 @@ public class GatewayAuthFilter extends OncePerRequestFilter {
         return validated == null ? UUID.randomUUID().toString() : validated;
     }
 
-    private void writeError(HttpServletResponse response, int status, String code, String info) throws IOException {
-        response.setStatus(status);
-        response.setCharacterEncoding("UTF-8");
-        response.setContentType("application/json;charset=UTF-8");
-        response.getWriter().write("{\"code\":\"" + code + "\",\"info\":\"" + info + "\",\"data\":null}");
+    private AppException authRequired(String info) {
+        return new AppException(Constants.ResponseCode.AUTH_REQUIRED.getCode(), info);
+    }
+
+    private void resolveException(HttpServletRequest request, HttpServletResponse response,
+                                  RuntimeException exception) {
+        handlerExceptionResolver.resolveException(request, response, null, exception);
     }
 }

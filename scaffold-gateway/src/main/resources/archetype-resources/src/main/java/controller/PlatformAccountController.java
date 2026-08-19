@@ -2,6 +2,7 @@ package ${package}.controller;
 
 import cn.iantech.api.model.rbac.CreateRbacAccountReq;
 import cn.iantech.api.model.rbac.RbacAccountDTO;
+import cn.iantech.common.constant.Constants;
 import cn.iantech.common.exception.AppException;
 import cn.iantech.common.model.Response;
 import ${package}.config.PlatformSecurityProperties;
@@ -32,7 +33,7 @@ public class PlatformAccountController {
     public Response<RbacAccountDTO> createAccount(@RequestHeader("X-Platform-Token") String platformToken,
                                                    @Valid @RequestBody CreateAccountRequest request) {
         if (!constantTimeEquals(properties.token(), platformToken)) {
-            throw new AppException("ACCESS_DENIED", "平台凭据无效");
+            throw new AppException(Constants.ResponseCode.ACCESS_DENIED.getCode(), "平台凭据无效");
         }
         return success(authenticator.createAccount(CreateRbacAccountReq.builder()
                 .username(request.username()).password(request.password()).displayName(request.displayName())

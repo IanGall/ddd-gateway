@@ -2,10 +2,14 @@ package cn.iantech.gateway.service;
 
 import cn.iantech.api.IAuthService;
 import cn.iantech.api.model.auth.*;
+import cn.iantech.common.exception.AppException;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.function.Supplier;
+
+import static cn.iantech.common.constant.Constants.ResponseCode.AUTH_UNAVAILABLE;
 
 /**
  * 网关到 RBAC Auth 服务的 RPC 适配器。网关不持有令牌或会话状态。
@@ -17,31 +21,64 @@ public class GatewayAuthClient {
     private IAuthService authService;
 
     public AuthTokenDTO login(AuthLoginReq request) {
-        return authService.login(request);
+        return invoke(() -> authService.login(request));
     }
 
     public AuthTokenDTO refresh(AuthRefreshReq request) {
-        return authService.refresh(request);
+        return invoke(() -> authService.refresh(request));
     }
 
     public AuthIdentityDTO validate(String accessToken) {
-        return authService.validate(AuthValidateReq.builder().accessToken(accessToken).build());
+        return invoke(() -> authService.validate(AuthValidateReq.builder().accessToken(accessToken).build()));
     }
 
     public void logout(String accessToken) {
-        authService.logout(AuthLogoutReq.builder().accessToken(accessToken).build());
+        invoke(() -> authService.logout(AuthLogoutReq.builder().accessToken(accessToken).build()));
     }
 
     public void logoutAll(String accessToken) {
-        authService.logoutAll(AuthLogoutAllReq.builder().accessToken(accessToken).build());
+        invoke(() -> authService.logoutAll(AuthLogoutAllReq.builder().accessToken(accessToken).build()));
     }
 
     public List<AuthSessionDTO> sessions(String accessToken) {
-        return authService.sessions(AuthSessionQueryReq.builder().accessToken(accessToken).build());
+        return invoke(() -> authService.sessions(AuthSessionQueryReq.builder().accessToken(accessToken).build()));
     }
 
     public void revokeSession(String accessToken, String sessionId) {
-        authService.revokeSession(AuthRevokeSessionReq.builder().accessToken(accessToken)
-                .sessionId(sessionId).build());
+        invoke(() -> authService.revokeSession(AuthRevokeSessionReq.builder().accessToken(accessToken)
+                .sessionId(sessionId).build()));
+    }
+
+    private <T> T invoke(Supplier<T> invocation) {
+        try {
+            return invocation.get();
+        } catch (AppException exception) {
+            throw exception;
+        } catch (RuntimeException exception) {
+            throw translate(exception);
+        }
+    }
+
+    private void invoke(Runnable invocation) {
+        try {
+            invocation.run();
+        } catch (AppException exception) {
+            throw exception;
+        } catch (RuntimeException exception) {
+            throw translate(exception);
+        }
+    }
+
+    private RuntimeException translate(RuntimeException exception) {
+        AppException appException = findAppException(exception);
+        return appException == null ? new AppException(AUTH_UNAVAILABLE.getCode(), AUTH_UNAVAILABLE.getInfo(), exception)
+                : appException;
+    }
+
+    private AppException findAppException(Throwable exception) {
+        if (exception instanceof AppException appException) {
+            return appException;
+        }
+        return exception.getCause() == null ? null : findAppException(exception.getCause());
     }
 }

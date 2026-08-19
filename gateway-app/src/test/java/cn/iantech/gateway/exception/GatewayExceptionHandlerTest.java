@@ -33,6 +33,27 @@ class GatewayExceptionHandlerTest {
         assertEquals(Constants.ResponseCode.ACCESS_DENIED.getCode(), response.getBody().getCode());
     }
 
+    @Test
+    void shouldMapAuthUnavailableToServiceUnavailable() {
+        ResponseEntity<Response<Void>> response = handler.handleAppException(
+                new AppException(Constants.ResponseCode.AUTH_UNAVAILABLE.getCode(),
+                        Constants.ResponseCode.AUTH_UNAVAILABLE.getInfo()));
+
+        assertEquals(HttpStatus.SERVICE_UNAVAILABLE, response.getStatusCode());
+        assertEquals(Constants.ResponseCode.AUTH_UNAVAILABLE.getCode(), response.getBody().getCode());
+    }
+
+    // 验证未由 Auth 客户端归一化的 Dubbo 异常返回 502
+    @Test
+    void shouldMapRpcExceptionToBadGateway() {
+        ResponseEntity<Response<Void>> response = handler.handleRpcException(
+                new RpcException(RpcException.BIZ_EXCEPTION, "认证失败",
+                        new AppException("AUTH_REQUIRED", "令牌已过期")));
+
+        assertEquals(HttpStatus.BAD_GATEWAY, response.getStatusCode());
+        assertEquals(Constants.ResponseCode.RPC_ERROR.getCode(), response.getBody().getCode());
+    }
+
     // 验证 Dubbo 超时异常映射为 504 响应
     @Test
     void shouldMapDubboTimeoutToGatewayTimeout() {
@@ -61,7 +82,7 @@ class GatewayExceptionHandlerTest {
                 new jakarta.validation.ConstraintViolationException("参数错误", java.util.Set.of()));
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertEquals(Constants.ResponseCode.ILLEGAL_PARAMETER.getCode(), response.getBody().getCode());
+        assertEquals(Constants.ResponseCode.INVALID_ARGUMENT.getCode(), response.getBody().getCode());
     }
 
 }

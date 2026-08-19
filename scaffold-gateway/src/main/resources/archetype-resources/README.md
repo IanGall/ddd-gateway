@@ -35,3 +35,7 @@ curl -s -X POST http://127.0.0.1:8092/auth/refresh \
 生成网关只信任 Auth 返回的身份，并恢复主账号 ID、当前用户 ID 和本地用户名，不信任外部 `X-Tenant-Id`、`X-User-Id`。
 `POST /platform/accounts` 由 `X-Platform-Token` 保护，用于创建主账号。Dubbo Triple 消费端使用明文 RPC，注册中心通过
 Nacos 用户名密码认证。
+
+认证 RPC 的异常由 `GatewayAuthClient` 沿 cause 链保留 `AppException`，未声明的 RPC 失败统一转换为
+`AUTH_UNAVAILABLE`。过滤器将异常委托给唯一的 `GatewayExceptionHandler`，由 `Constants.ResponseCode` 统一决定 HTTP 状态和
+`data: null` 响应；不要在过滤器或控制器中手写 JSON、解析 Dubbo `GenericException` 或重复维护状态码映射。

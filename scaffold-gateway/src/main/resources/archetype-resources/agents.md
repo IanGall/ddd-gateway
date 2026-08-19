@@ -6,6 +6,9 @@
 - 生产环境凭据只能通过环境变量注入，禁止提交真实密钥。
 - 主账号边界和当前用户身份必须由 RBAC Auth RPC 校验 opaque Token 后建立，禁止信任外部身份 Header。
 - Gateway 不生成 Token、不保存 Session、不访问 Auth Redis；`/auth/*` 仅作为 Auth RPC 的 HTTP 门面。
+- RPC 异常必须由 `GatewayAuthClient` 转换为 `AppException`/`AUTH_UNAVAILABLE`，认证过滤器委托 `HandlerExceptionResolver`
+  ，统一由 `GatewayExceptionHandler` 按 `Constants.ResponseCode` 输出状态码和 `data=null`；禁止手写 JSON、解析
+  `GenericException` 或复制状态码映射。
 - `PLATFORM_ADMIN_TOKEN` 仅用于平台创建主账号，禁止进入租户 RBAC 权限体系。
 - Dubbo Triple 消费端使用明文 RPC，注册中心凭据通过环境变量注入。
 - 新增代码和注释使用中文，优先复用 `ddd-common`。

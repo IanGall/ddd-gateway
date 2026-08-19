@@ -1,6 +1,7 @@
 package ${package}.controller;
 
 import ${package}.model.GatewayStatus;
+import cn.iantech.common.constant.Constants;
 import cn.iantech.common.model.Response;
 import org.junit.jupiter.api.Test;
 
@@ -13,7 +14,7 @@ class GatewayStatusControllerTest {
     void shouldReturnCurrentGatewayStatus() {
         Response<GatewayStatus> response = new GatewayStatusController("test-gateway").status();
 
-        assertEquals("0000", response.getCode());
+        assertEquals(Constants.ResponseCode.SUCCESS.getCode(), response.getCode());
         assertEquals("test-gateway", response.getData().application());
         assertEquals("UP", response.getData().status());
     }

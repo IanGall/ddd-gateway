@@ -25,6 +25,10 @@ export PLATFORM_ADMIN_TOKEN='从密钥管理系统读取的高强度令牌'
 
 认证会话由 RBAC Auth 服务统一保存和校验，Gateway 不再连接 Redis，也不保存本地 Session。
 
+标准服务的 `IAuthService`、`IRbacService` 和 `IUserService` 全部显式声明 `throws AppException`。这样 Dubbo 会按声明式业务异常
+原样传递语义码，Gateway 能区分令牌失效等业务失败与 Auth 服务不可用等基础设施故障。Gateway 的认证过滤器只负责把异常交给
+Spring MVC 的统一异常解析器，不手写 JSON，也不分析 Dubbo 异常文本。
+
 `POST /platform/accounts` 只接受 `X-Platform-Token`，生产环境未配置 `PLATFORM_ADMIN_TOKEN` 时应用拒绝启动。登录、刷新、注销和会话管理
 均由 Gateway 转发给 RBAC Auth；业务请求携带的是由 Auth 签发的 opaque Bearer Token。Gateway 每个受保护请求调用 Auth 校验令牌后，
 再恢复主账号和当前用户上下文，不采信外部 `X-Tenant-Id` 或 `X-User-Id`。Dubbo Triple 使用现有明文 RPC 连接，不启用 JWT、JWKS
@@ -67,6 +71,23 @@ curl -s -X POST http://127.0.0.1:8092/auth/refresh \
 业务请求需在 `Authorization` 请求头中携带 `Bearer <accessToken>`，Refresh Token 只提交给 `/auth/refresh`，不放入 URL
 或业务请求头。
 `/auth/logout`、`/auth/logout-all`、`/auth/sessions` 和 `/auth/sessions/{sessionId}` 用于退出和设备会话管理。
+
+HTTP 错误统一返回 `{"code","info","data"}`，并保留 `X-Request-Id`。公共语义码和状态码映射如下：
+
+| 响应码                                | HTTP 状态码 |
+|---------------------------------------|------------:|
+| `INVALID_ARGUMENT`                    |         400 |
+| `AUTH_REQUIRED`                       |         401 |
+| `ACCESS_DENIED`                       |         403 |
+| `AUTH_REFRESH_BUSY`                   |         409 |
+| 其他明确业务异常                      |         422 |
+| `RPC_ERROR`                           |         502 |
+| `AUTH_UNAVAILABLE`、`RPC_NO_PROVIDER` |         503 |
+| `RPC_TIMEOUT`                         |         504 |
+| `INTERNAL_ERROR`                      |         500 |
+
+客户端必须按 `SUCCESS` 等语义码判断结果，不再使用 `0000`～`0003` 数字码。认证失败只在 `AUTH_REQUIRED` 等业务码下返回；只有
+无提供者、网络失败、超时或未识别的 Auth 运行时故障才返回服务不可用类错误。响应不会包含服务端堆栈。
 
 健康检查无需认证：
 

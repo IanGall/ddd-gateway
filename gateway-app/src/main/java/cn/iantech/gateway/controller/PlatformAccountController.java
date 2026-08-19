@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 
+import static cn.iantech.common.constant.Constants.ResponseCode.ACCESS_DENIED;
 import static cn.iantech.gateway.model.GatewayResponses.success;
 
 @RestController
@@ -35,7 +36,7 @@ public class PlatformAccountController {
             @RequestHeader("X-Platform-Token") String platformToken,
             @Valid @RequestBody CreateAccountRequest request) {
         if (!constantTimeEquals(properties.token(), platformToken)) {
-            throw new AppException("ACCESS_DENIED", "平台凭据无效");
+            throw new AppException(ACCESS_DENIED.getCode(), "平台凭据无效");
         }
         return success(authenticator.createAccount(CreateRbacAccountReq.builder()
                 .username(request.username())
