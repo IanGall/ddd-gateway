@@ -14,13 +14,30 @@ class GatewayExceptionHandlerTest {
 
     private final GatewayExceptionHandler handler = new GatewayExceptionHandler();
 
-    // 验证业务异常映射为 422 响应
+    // 未登记的业务码统一按内部错误处理，避免向客户端暴露未知协议。
     @Test
-    void shouldMapBusinessExceptionToUnprocessableEntity() {
+    void shouldMapUnknownCodeToInternalError() {
         ResponseEntity<Response<Void>> response = handler.handleAppException(new AppException("USER_EXISTS", "用户已存在"));
 
-        assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, response.getStatusCode());
-        assertEquals("USER_EXISTS", response.getBody().getCode());
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        assertEquals(Constants.ResponseCode.INTERNAL_ERROR.getCode(), response.getBody().getCode());
+        assertEquals(Constants.ResponseCode.INTERNAL_ERROR.getInfo(), response.getBody().getInfo());
+    }
+
+    @Test
+    void shouldMapEmptyCodeToInternalError() {
+        ResponseEntity<Response<Void>> response = handler.handleAppException(new AppException("", "业务异常"));
+
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        assertEquals(Constants.ResponseCode.INTERNAL_ERROR.getCode(), response.getBody().getCode());
+    }
+
+    @Test
+    void shouldMapNullCodeToInternalError() {
+        ResponseEntity<Response<Void>> response = handler.handleAppException(new AppException(null, "业务异常"));
+
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        assertEquals(Constants.ResponseCode.INTERNAL_ERROR.getCode(), response.getBody().getCode());
     }
 
     // 验证授权拒绝映射为 403 响应
@@ -52,39 +69,7 @@ class GatewayExceptionHandlerTest {
         assertEquals(Constants.ResponseCode.AUTH_RATE_LIMITED.getCode(), response.getBody().getCode());
     }
 
-    // 验证未由 Auth 客户端归一化的 Dubbo 异常返回 502
-    @Test
-    void shouldMapRpcExceptionToBadGateway() {
-        ResponseEntity<Response<Void>> response = handler.handleRpcException(
-                new RpcException(RpcException.BIZ_EXCEPTION, "认证失败",
-                        new AppException("AUTH_REQUIRED", "令牌已过期")));
-
-        assertEquals(HttpStatus.BAD_GATEWAY, response.getStatusCode());
-        assertEquals(Constants.ResponseCode.RPC_ERROR.getCode(), response.getBody().getCode());
-    }
-
-    // 验证 Dubbo 超时异常映射为 504 响应
-    @Test
-    void shouldMapDubboTimeoutToGatewayTimeout() {
-        ResponseEntity<Response<Void>> response = handler.handleRpcException(
-                new RpcException(RpcException.TIMEOUT_EXCEPTION, "timeout"));
-
-        assertEquals(HttpStatus.GATEWAY_TIMEOUT, response.getStatusCode());
-        assertEquals("RPC_TIMEOUT", response.getBody().getCode());
-    }
-
-    // 验证普通 Dubbo 调用失败映射为 502 响应
-    @Test
-    void shouldMapDubboFailureToBadGateway() {
-        ResponseEntity<Response<Void>> response = handler.handleRpcException(
-                new RpcException(RpcException.NETWORK_EXCEPTION, "下游连接失败"));
-
-        assertEquals(HttpStatus.BAD_GATEWAY, response.getStatusCode());
-        assertEquals("RPC_ERROR", response.getBody().getCode());
-        assertEquals("下游服务调用失败", response.getBody().getInfo());
-    }
-
-    // 验证参数异常映射为 400 响应
+    // 验证参数异常映射为 400，并且不透传底层异常文案。
     @Test
     void shouldMapValidationExceptionToBadRequest() {
         ResponseEntity<Response<Void>> response = handler.handleValidationException(
@@ -92,6 +77,16 @@ class GatewayExceptionHandlerTest {
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertEquals(Constants.ResponseCode.INVALID_ARGUMENT.getCode(), response.getBody().getCode());
+        assertEquals(Constants.ResponseCode.INVALID_ARGUMENT.getInfo(), response.getBody().getInfo());
+    }
+
+    @Test
+    void shouldMapRawRpcTimeoutThroughSharedTranslator() {
+        ResponseEntity<Response<Void>> response = handler.handleRpcException(
+                new RpcException(RpcException.TIMEOUT_EXCEPTION, "timeout"));
+
+        assertEquals(HttpStatus.GATEWAY_TIMEOUT, response.getStatusCode());
+        assertEquals(Constants.ResponseCode.RPC_TIMEOUT.getCode(), response.getBody().getCode());
     }
 
 }

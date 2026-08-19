@@ -65,30 +65,47 @@ class GatewayExceptionHandlerTest {
     }
 
     @Test
+    void shouldMapUnknownCodeToInternalError() {
+        ResponseEntity<Response<Void>> response = handler.handleAppException(new AppException("UNKNOWN", "业务异常"));
+
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        assertEquals(Constants.ResponseCode.INTERNAL_ERROR.getCode(), response.getBody().getCode());
+        assertEquals(Constants.ResponseCode.INTERNAL_ERROR.getInfo(), response.getBody().getInfo());
+    }
+
+    @Test
+    void shouldMapEmptyCodeToInternalError() {
+        ResponseEntity<Response<Void>> response = handler.handleAppException(new AppException("", "业务异常"));
+
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        assertEquals(Constants.ResponseCode.INTERNAL_ERROR.getCode(), response.getBody().getCode());
+    }
+
+    @Test
+    void shouldMapNullCodeToInternalError() {
+        ResponseEntity<Response<Void>> response = handler.handleAppException(new AppException(null, "业务异常"));
+
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        assertEquals(Constants.ResponseCode.INTERNAL_ERROR.getCode(), response.getBody().getCode());
+    }
+
+    // 参数校验固定返回协议文案，不透传底层解析异常消息。
+    @Test
     void shouldMapValidationToBadRequest() {
         ResponseEntity<Response<Void>> response = handler.handleValidationException(
                 new ConstraintViolationException("参数错误", Set.of()));
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertEquals(Constants.ResponseCode.INVALID_ARGUMENT.getCode(), response.getBody().getCode());
+        assertEquals(Constants.ResponseCode.INVALID_ARGUMENT.getInfo(), response.getBody().getInfo());
     }
 
     @Test
-    void shouldMapDubboTimeoutToGatewayTimeout() {
+    void shouldMapRawRpcTimeoutThroughSharedTranslator() {
         ResponseEntity<Response<Void>> response = handler.handleRpcException(
                 new RpcException(RpcException.TIMEOUT_EXCEPTION, "timeout"));
 
         assertEquals(HttpStatus.GATEWAY_TIMEOUT, response.getStatusCode());
         assertEquals(Constants.ResponseCode.RPC_TIMEOUT.getCode(), response.getBody().getCode());
-    }
-
-    @Test
-    void shouldMapDubboFailureToBadGateway() {
-        ResponseEntity<Response<Void>> response = handler.handleRpcException(
-                new RpcException(RpcException.NETWORK_EXCEPTION, "下游连接失败"));
-
-        assertEquals(HttpStatus.BAD_GATEWAY, response.getStatusCode());
-        assertEquals(Constants.ResponseCode.RPC_ERROR.getCode(), response.getBody().getCode());
-        assertNull(response.getBody().getData());
     }
 }

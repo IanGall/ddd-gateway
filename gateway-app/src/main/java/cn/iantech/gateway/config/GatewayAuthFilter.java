@@ -18,6 +18,7 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.HandlerExceptionResolver;
+import org.springframework.web.servlet.ModelAndView;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -127,6 +128,9 @@ public class GatewayAuthFilter extends OncePerRequestFilter {
 
     private void resolveException(HttpServletRequest request, HttpServletResponse response,
                                   RuntimeException exception) {
-        handlerExceptionResolver.resolveException(request, response, null, exception);
+        ModelAndView resolved = handlerExceptionResolver.resolveException(request, response, null, exception);
+        if (resolved == null) {
+            throw exception;
+        }
     }
 }

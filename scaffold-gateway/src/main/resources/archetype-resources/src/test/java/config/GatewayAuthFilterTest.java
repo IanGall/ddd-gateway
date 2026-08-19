@@ -14,6 +14,7 @@ import org.springframework.web.servlet.ModelAndView;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class GatewayAuthFilterTest {
@@ -52,6 +53,18 @@ class GatewayAuthFilterTest {
         assertEquals("opaque-token", GatewayAuthFilter.accessToken(request));
         assertEquals(200, response.getStatus());
         assertTrue(response.getHeader("X-Request-Id") != null);
+    }
+
+    @Test
+    void shouldRethrowWhenExceptionResolverReturnsNull() {
+        GatewayAuthFilter filter = new GatewayAuthFilter(new StubAuthClient(null),
+                (request, response, handler, exception) -> null);
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/rbac/roles");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        assertThrows(AppException.class, () -> filter.doFilter(request, response, (servletRequest, servletResponse) -> {
+            throw new AssertionError("认证失败时不应继续调用下游");
+        }));
     }
 
     private HandlerExceptionResolver resolver(AtomicReference<RuntimeException> captured) {

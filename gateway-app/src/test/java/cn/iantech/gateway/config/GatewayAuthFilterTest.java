@@ -11,11 +11,11 @@ import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.web.servlet.HandlerExceptionResolver;
+import org.springframework.web.servlet.ModelAndView;
 
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.*;
@@ -26,6 +26,7 @@ class GatewayAuthFilterTest {
     void shouldDelegateMissingTokenToExceptionResolver() throws Exception {
         GatewayAuthClient authClient = mock(GatewayAuthClient.class);
         HandlerExceptionResolver resolver = mock(HandlerExceptionResolver.class);
+        when(resolver.resolveException(any(), any(), isNull(), any())).thenReturn(new ModelAndView());
         GatewayAuthFilter filter = new GatewayAuthFilter(authClient, resolver);
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/rbac/roles");
         request.addHeader(GatewayAuthFilter.REQUEST_ID_HEADER, "request-001");
@@ -46,6 +47,7 @@ class GatewayAuthFilterTest {
                 .thenThrow(new AppException(Constants.ResponseCode.AUTH_UNAVAILABLE.getCode(),
                         Constants.ResponseCode.AUTH_UNAVAILABLE.getInfo()));
         HandlerExceptionResolver resolver = mock(HandlerExceptionResolver.class);
+        when(resolver.resolveException(any(), any(), isNull(), any())).thenReturn(new ModelAndView());
         GatewayAuthFilter filter = new GatewayAuthFilter(authClient, resolver);
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/rbac/roles");
         request.addHeader("Authorization", "Bearer opaque-token");
@@ -53,6 +55,17 @@ class GatewayAuthFilterTest {
         filter.doFilter(request, new MockHttpServletResponse(), mock(FilterChain.class));
 
         verify(resolver).resolveException(any(), any(), isNull(), any(AppException.class));
+    }
+
+    @Test
+    void shouldRethrowWhenExceptionResolverReturnsNull() {
+        GatewayAuthClient authClient = mock(GatewayAuthClient.class);
+        HandlerExceptionResolver resolver = mock(HandlerExceptionResolver.class);
+        GatewayAuthFilter filter = new GatewayAuthFilter(authClient, resolver);
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/rbac/roles");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        assertThrows(AppException.class, () -> filter.doFilter(request, response, mock(FilterChain.class)));
     }
 
     @Test

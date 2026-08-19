@@ -13,6 +13,7 @@ import cn.iantech.api.model.auth.AuthTokenDTO;
 import cn.iantech.api.model.auth.AuthValidateReq;
 import cn.iantech.common.constant.Constants;
 import cn.iantech.common.exception.AppException;
+import org.apache.dubbo.rpc.RpcException;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -41,6 +42,17 @@ class GatewayAuthClientTest {
         AppException actual = assertThrows(AppException.class, () -> client.validate("opaque-token"));
 
         assertEquals(Constants.ResponseCode.AUTH_UNAVAILABLE.getCode(), actual.getCode());
+    }
+
+    @Test
+    void shouldTranslateRpcTimeoutToGatewayTimeout() {
+        GatewayAuthClient client = client(new StubAuthService(
+                new RpcException(RpcException.TIMEOUT_EXCEPTION, "timeout")));
+
+        AppException actual = assertThrows(AppException.class, () -> client.validate("opaque-token"));
+
+        assertEquals(Constants.ResponseCode.RPC_TIMEOUT.getCode(), actual.getCode());
+        assertEquals(RpcException.class, actual.getCause().getClass());
     }
 
     private GatewayAuthClient client(IAuthService authService) {

@@ -2,7 +2,7 @@ package cn.iantech.gateway.service;
 
 import cn.iantech.api.IAuthService;
 import cn.iantech.api.model.auth.*;
-import cn.iantech.common.exception.AppException;
+import cn.iantech.gateway.exception.GatewayRpcExceptionTranslator;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.stereotype.Component;
 
@@ -52,33 +52,16 @@ public class GatewayAuthClient {
     private <T> T invoke(Supplier<T> invocation) {
         try {
             return invocation.get();
-        } catch (AppException exception) {
-            throw exception;
         } catch (RuntimeException exception) {
-            throw translate(exception);
+            throw GatewayRpcExceptionTranslator.translate(exception, AUTH_UNAVAILABLE);
         }
     }
 
     private void invoke(Runnable invocation) {
         try {
             invocation.run();
-        } catch (AppException exception) {
-            throw exception;
         } catch (RuntimeException exception) {
-            throw translate(exception);
+            throw GatewayRpcExceptionTranslator.translate(exception, AUTH_UNAVAILABLE);
         }
-    }
-
-    private RuntimeException translate(RuntimeException exception) {
-        AppException appException = findAppException(exception);
-        return appException == null ? new AppException(AUTH_UNAVAILABLE.getCode(), AUTH_UNAVAILABLE.getInfo(), exception)
-                : appException;
-    }
-
-    private AppException findAppException(Throwable exception) {
-        if (exception instanceof AppException appException) {
-            return appException;
-        }
-        return exception.getCause() == null ? null : findAppException(exception.getCause());
     }
 }

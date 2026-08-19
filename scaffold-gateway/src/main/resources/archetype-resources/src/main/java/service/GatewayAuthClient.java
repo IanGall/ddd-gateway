@@ -11,7 +11,7 @@ import cn.iantech.api.model.auth.AuthSessionDTO;
 import cn.iantech.api.model.auth.AuthSessionQueryReq;
 import cn.iantech.api.model.auth.AuthTokenDTO;
 import cn.iantech.api.model.auth.AuthValidateReq;
-import cn.iantech.common.exception.AppException;
+import ${package}.exception.GatewayRpcExceptionTranslator;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.stereotype.Component;
 
@@ -60,7 +60,7 @@ public class GatewayAuthClient {
         try {
             return invocation.get();
         } catch (RuntimeException exception) {
-            throw translate(exception);
+            throw GatewayRpcExceptionTranslator.translate(exception, AUTH_UNAVAILABLE);
         }
     }
 
@@ -68,20 +68,7 @@ public class GatewayAuthClient {
         try {
             invocation.run();
         } catch (RuntimeException exception) {
-            throw translate(exception);
+            throw GatewayRpcExceptionTranslator.translate(exception, AUTH_UNAVAILABLE);
         }
-    }
-
-    private RuntimeException translate(RuntimeException exception) {
-        AppException appException = findAppException(exception);
-        return appException != null ? appException
-                : new AppException(AUTH_UNAVAILABLE.getCode(), AUTH_UNAVAILABLE.getInfo(), exception);
-    }
-
-    private AppException findAppException(Throwable exception) {
-        if (exception instanceof AppException appException) {
-            return appException;
-        }
-        return exception.getCause() == null ? null : findAppException(exception.getCause());
     }
 }

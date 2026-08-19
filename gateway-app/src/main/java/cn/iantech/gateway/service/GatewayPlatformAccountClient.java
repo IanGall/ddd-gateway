@@ -3,8 +3,11 @@ package cn.iantech.gateway.service;
 import cn.iantech.api.IPlatformAccountService;
 import cn.iantech.api.model.rbac.PlatformCreateAccountReq;
 import cn.iantech.api.model.rbac.RbacAccountDTO;
+import cn.iantech.gateway.exception.GatewayRpcExceptionTranslator;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.stereotype.Component;
+
+import static cn.iantech.common.constant.Constants.ResponseCode.RPC_ERROR;
 
 /**
  * 网关到标准工程的平台主账号 RPC 客户端。
@@ -16,6 +19,10 @@ public class GatewayPlatformAccountClient {
     private IPlatformAccountService platformAccountService;
 
     public RbacAccountDTO createAccount(PlatformCreateAccountReq request) {
-        return platformAccountService.createAccount(request);
+        try {
+            return platformAccountService.createAccount(request);
+        } catch (RuntimeException exception) {
+            throw GatewayRpcExceptionTranslator.translate(exception, RPC_ERROR);
+        }
     }
 }

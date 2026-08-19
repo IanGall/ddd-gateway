@@ -37,15 +37,15 @@ class GatewayAuthClientTest {
     }
 
     @Test
-    void shouldNormalizeRpcExceptionToAuthUnavailable() {
+    void shouldNormalizeRpcTimeoutToGatewayTimeout() {
         when(authService.login(org.mockito.ArgumentMatchers.any(AuthLoginReq.class)))
                 .thenThrow(new RpcException(RpcException.TIMEOUT_EXCEPTION, "timeout"));
 
         AppException actual = assertThrows(AppException.class,
                 () -> client.login(AuthLoginReq.builder().loginName("user").password("password").build()));
 
-        assertEquals(Constants.ResponseCode.AUTH_UNAVAILABLE.getCode(), actual.getCode());
-        assertEquals(Constants.ResponseCode.AUTH_UNAVAILABLE.getInfo(), actual.getInfo());
+        assertEquals(Constants.ResponseCode.RPC_TIMEOUT.getCode(), actual.getCode());
+        assertEquals(Constants.ResponseCode.RPC_TIMEOUT.getInfo(), actual.getInfo());
         assertEquals(RpcException.class, actual.getCause().getClass());
     }
 
