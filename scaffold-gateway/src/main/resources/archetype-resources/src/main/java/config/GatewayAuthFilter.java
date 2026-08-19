@@ -26,7 +26,7 @@ import java.io.IOException;
 import java.util.UUID;
 
 /**
- * 管理端与移动端校验 opaque Bearer Token，渠道业务请求校验 HMAC，并建立可信请求上下文。
+ * Admin 与 App 请求校验 opaque Bearer Token，External 请求校验 HMAC，并建立可信请求上下文。
  */
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE + 100)
@@ -68,19 +68,26 @@ public class GatewayAuthFilter extends OncePerRequestFilter {
                                     FilterChain filterChain) throws ServletException, IOException {
         String requestId = validOrGenerate(request.getHeader(REQUEST_ID_HEADER));
         response.setHeader(REQUEST_ID_HEADER, requestId);
-        if (!requiresAuthentication(request)) {
-            try (ContextScope ignored = ContextAccessor.open(new RequestContext(requestId, null, null, null,
-                    null, null, null, "gateway", null))) {
-                filterChain.doFilter(request, response);
-            }
-            return;
+        RouteKind routeKind = classifyRoute(request);
+        switch (routeKind) {
+            case ANONYMOUS, PLATFORM, ACTUATOR -> continueAnonymous(request, response, filterChain, requestId);
+            case ADMIN, APP -> authenticateBearer(request, response, filterChain, requestId, routeKind);
+            case EXTERNAL -> authenticateExternal(request, response, filterChain, requestId);
+            case DENIED -> resolveException(request, response,
+                    new AppException(Constants.ResponseCode.ACCESS_DENIED.getCode(), "请求路径不在允许的 API 分区内"));
         }
+    }
 
-        if (isIntegrationRequest(request)) {
-            authenticateIntegration(request, response, filterChain, requestId);
-            return;
+    private void continueAnonymous(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain,
+                                   String requestId) throws ServletException, IOException {
+        try (ContextScope ignored = ContextAccessor.open(new RequestContext(requestId, null, null, null,
+                null, null, null, "gateway", null))) {
+            filterChain.doFilter(request, response);
         }
+    }
 
+    private void authenticateBearer(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain,
+                                    String requestId, RouteKind routeKind) throws IOException, ServletException {
         String accessToken = bearerToken(request.getHeader("Authorization"));
         if (accessToken == null) {
             resolveException(request, response, authRequired("需要认证"));
@@ -94,9 +101,13 @@ public class GatewayAuthFilter extends OncePerRequestFilter {
             resolveException(request, response, exception);
             return;
         }
-        normalizeIdentity(identity);
         if (!validIdentity(identity)) {
             resolveException(request, response, authRequired("认证令牌无效或已过期"));
+            return;
+        }
+        if (!allowedRoute(routeKind, identity)) {
+            resolveException(request, response,
+                    new AppException(Constants.ResponseCode.ACCESS_DENIED.getCode(), "主体类型无权访问该 API 分区"));
             return;
         }
 
@@ -105,8 +116,8 @@ public class GatewayAuthFilter extends OncePerRequestFilter {
         continueWithIdentity(request, response, filterChain, requestId, identity);
     }
 
-    private void authenticateIntegration(HttpServletRequest request, HttpServletResponse response,
-                                         FilterChain filterChain, String requestId) throws IOException, ServletException {
+    private void authenticateExternal(HttpServletRequest request, HttpServletResponse response,
+                                      FilterChain filterChain, String requestId) throws IOException, ServletException {
         if (channelAuthClient == null) {
             resolveException(request, response, new AppException(Constants.ResponseCode.AUTH_UNAVAILABLE.getCode(),
                     Constants.ResponseCode.AUTH_UNAVAILABLE.getInfo()));
@@ -127,6 +138,11 @@ public class GatewayAuthFilter extends OncePerRequestFilter {
                 resolveException(request, response, authRequired("渠道认证失败"));
                 return;
             }
+            if (!allowedRoute(RouteKind.EXTERNAL, identity)) {
+                resolveException(request, response,
+                        new AppException(Constants.ResponseCode.ACCESS_DENIED.getCode(), "主体类型无权访问该 API 分区"));
+                return;
+            }
             wrapped.setAttribute(IDENTITY_ATTRIBUTE, identity);
             continueWithIdentity(wrapped, response, filterChain, requestId, identity);
         } catch (CachedBodyHttpServletRequest.ChannelPayloadTooLargeException exception) {
@@ -143,24 +159,60 @@ public class GatewayAuthFilter extends OncePerRequestFilter {
                 identity.getClientId(), null, "gateway", null, stringValue(identity.getOwnerAccountId()),
                 identity.getAuthorizedScope(), stringValue(identity.getCredentialVersion()));
         try (ContextScope ignored = ContextAccessor.open(context)) {
-            if (!allowedRoute(request, identity)) {
-                resolveException(request, response, new AppException(Constants.ResponseCode.ACCESS_DENIED.getCode(),
-                        "主体类型无权访问该资源"));
-                return;
-            }
             filterChain.doFilter(request, response);
         }
     }
 
-    private boolean requiresAuthentication(HttpServletRequest request) {
-        String path = request.getRequestURI().substring(request.getContextPath().length());
-        return path.startsWith("/api/") || path.equals("/auth/logout") || path.equals("/auth/logout-all")
-                || path.equals("/auth/sessions") || path.startsWith("/auth/sessions/");
+    private RouteKind classifyRoute(HttpServletRequest request) {
+        String path = safePath(request);
+        if (path == null) {
+            return RouteKind.DENIED;
+        }
+        if ("GET".equals(request.getMethod()) && path.equals("/actuator/health")) {
+            return RouteKind.ACTUATOR;
+        }
+        if ("POST".equals(request.getMethod()) && path.equals("/api/admin/platform/accounts")) {
+            return RouteKind.PLATFORM;
+        }
+        if (isAnonymous(request.getMethod(), path)) {
+            return RouteKind.ANONYMOUS;
+        }
+        if (matches(path, "/api/admin")) {
+            return RouteKind.ADMIN;
+        }
+        if (matches(path, "/api/app")) {
+            return RouteKind.APP;
+        }
+        if (matches(path, "/api/external")) {
+            return RouteKind.EXTERNAL;
+        }
+        return RouteKind.DENIED;
     }
 
-    private boolean isIntegrationRequest(HttpServletRequest request) {
-        String path = request.getRequestURI().substring(request.getContextPath().length());
-        return path.equals("/api/integration") || path.startsWith("/api/integration/");
+    private boolean isAnonymous(String method, String path) {
+        return "POST".equals(method) && (path.equals("/api/admin/auth/login") || path.equals("/api/admin/auth/refresh")
+                || path.equals("/api/app/auth/register") || path.equals("/api/app/auth/login")
+                || path.equals("/api/app/auth/refresh"));
+    }
+
+    private String safePath(HttpServletRequest request) {
+        String requestUri = request.getRequestURI();
+        String contextPath = request.getContextPath();
+        if (requestUri == null || contextPath == null || !requestUri.startsWith(contextPath)) {
+            return null;
+        }
+        String path = requestUri.substring(contextPath.length());
+        if (path.isEmpty() || path.charAt(0) != '/' || path.indexOf('%') >= 0 || path.indexOf('\\') >= 0
+                || path.indexOf(';') >= 0 || path.contains("//")) {
+            return null;
+        }
+        boolean unsafeSegment = java.util.Arrays.stream(path.split("/", -1))
+                .anyMatch(segment -> ".".equals(segment) || "..".equals(segment));
+        return unsafeSegment ? null : path;
+    }
+
+    private boolean matches(String path, String root) {
+        return path.equals(root) || path.startsWith(root + "/");
     }
 
     private String bearerToken(String authorization) {
@@ -171,13 +223,12 @@ public class GatewayAuthFilter extends OncePerRequestFilter {
         return token.isBlank() ? null : token;
     }
 
-    private boolean allowedRoute(HttpServletRequest request, AuthIdentityDTO identity) {
-        String path = request.getRequestURI().substring(request.getContextPath().length());
-        return switch (identity.getSubjectType()) {
-            case "ADMIN_PRIMARY", "ADMIN_SUB_ACCOUNT" -> !path.startsWith("/api/mobile/")
-                    && !path.startsWith("/api/integration/");
-            case "CUSTOMER" -> path.startsWith("/api/mobile/");
-            case "CLIENT" -> (path.equals("/api/integration") || path.startsWith("/api/integration/"))
+    private boolean allowedRoute(RouteKind routeKind, AuthIdentityDTO identity) {
+        return switch (routeKind) {
+            case ADMIN -> "ADMIN_PRIMARY".equals(identity.getSubjectType())
+                    || "ADMIN_SUB_ACCOUNT".equals(identity.getSubjectType());
+            case APP -> "CUSTOMER".equals(identity.getSubjectType());
+            case EXTERNAL -> "CLIENT".equals(identity.getSubjectType())
                     && "CHANNEL_HMAC".equals(identity.getTokenKind());
             default -> false;
         };
@@ -190,23 +241,15 @@ public class GatewayAuthFilter extends OncePerRequestFilter {
         }
         return switch (identity.getSubjectType()) {
             case "ADMIN_PRIMARY", "ADMIN_SUB_ACCOUNT" ->
-                    identity.getAccountId() != null && identity.getUserId() != null && !isBlank(identity.getSessionId());
-            case "CUSTOMER" -> identity.getUserId() != null && !isBlank(identity.getSessionId());
+                    identity.getAccountId() != null && identity.getUserId() != null && !isBlank(identity.getSessionId())
+                            && "OPAQUE".equals(identity.getTokenKind());
+            case "CUSTOMER" -> identity.getUserId() != null && !isBlank(identity.getSessionId())
+                    && "OPAQUE".equals(identity.getTokenKind());
             case "CLIENT" -> !isBlank(identity.getClientId()) && "CHANNEL_HMAC".equals(identity.getTokenKind())
                     && identity.getOwnerAccountId() != null && identity.getCredentialVersion() != null
-                    && "integration:access".equals(identity.getAuthorizedScope());
+                    && "external:access".equals(identity.getAuthorizedScope());
             default -> false;
         };
-    }
-
-    private void normalizeIdentity(AuthIdentityDTO identity) {
-        if (identity == null) return;
-        if (isBlank(identity.getSubjectType()) && identity.getUserType() != null) {
-            identity.setSubjectType("PRIMARY".equals(identity.getUserType()) ? "ADMIN_PRIMARY" : "ADMIN_SUB_ACCOUNT");
-        }
-        if (isBlank(identity.getSubjectId()) && identity.getUserId() != null)
-            identity.setSubjectId(String.valueOf(identity.getUserId()));
-        if (isBlank(identity.getTokenKind())) identity.setTokenKind("OPAQUE");
     }
 
     private String stringValue(Long value) {
@@ -232,5 +275,15 @@ public class GatewayAuthFilter extends OncePerRequestFilter {
         if (resolved == null) {
             throw exception;
         }
+    }
+
+    private enum RouteKind {
+        ANONYMOUS,
+        PLATFORM,
+        ADMIN,
+        APP,
+        EXTERNAL,
+        ACTUATOR,
+        DENIED
     }
 }

@@ -5,7 +5,11 @@
 - 传输对象必须定义明确的 Java 类型，不使用 Map。
 - 生产环境凭据只能通过环境变量注入，禁止提交真实密钥。
 - 主账号边界和当前用户身份必须由 RBAC Auth RPC 校验 opaque Token 后建立，禁止信任外部身份 Header。
-- Gateway 不生成 Token、不保存 Session、不访问 Auth Redis；`/auth/*` 仅作为 Auth RPC 的 HTTP 门面。
+- Gateway 不生成 Token、不保存 Session、不访问 Auth Redis；Admin/App 的 `/api/*/auth/**` 仅作为 Auth RPC 的 HTTP 门面。
+- HTTP API 固定分为 `/api/admin/**`、`/api/app/**`、`/api/external/**`；App 用户不复用 Admin RBAC， Provider 必须按 customer
+  binding 与资源归属完成最终授权。
+- `/api/external/**` 只接受渠道 HMAC 与 `external:access` scope；`/api/admin/platform/accounts` 只转发
+  `X-Platform-Token`，不得使用普通 Admin Bearer 替代平台凭据。
 - RPC 异常必须由 `GatewayAuthClient` 转换为 `AppException`/`AUTH_UNAVAILABLE`，认证过滤器委托 `HandlerExceptionResolver`
   ，统一由 `GatewayExceptionHandler` 按 `Constants.ResponseCode` 输出状态码和 `data=null`；禁止手写 JSON、解析
   `GenericException` 或复制状态码映射。

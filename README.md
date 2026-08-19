@@ -28,9 +28,11 @@ export DUBBO_REGISTRY_PASSWORD='从密钥管理系统读取'
 原样传递语义码，Gateway 能区分令牌失效等业务失败与 Auth 服务不可用等基础设施故障。Gateway 的认证过滤器只负责把异常交给
 Spring MVC 的统一异常解析器，不手写 JSON，也不分析 Dubbo 异常文本。
 
-`POST /platform/accounts` 只负责把 `X-Platform-Token` 和开户字段封装为强类型 RPC 请求；平台凭据由标准服务 Provider
-最终校验，Gateway 不保存、不比较该凭据。Provider 未配置 `PLATFORM_ADMIN_TOKEN` 时拒绝启动。登录、刷新、注销和会话管理
-均由 Gateway 转发给 RBAC Auth；业务请求携带的是由 Auth 签发的 opaque Bearer Token。Gateway 每个受保护请求调用 Auth 校验令牌后，
+`POST /api/admin/platform/accounts` 只负责把 `X-Platform-Token` 和开户字段封装为强类型 RPC 请求；平台凭据由标准服务
+Provider
+最终校验，Gateway 不保存、不比较该凭据。Provider 未配置 `PLATFORM_ADMIN_TOKEN` 时拒绝启动。登录、刷新、注销和会话管理 按管理端
+`/api/admin/auth/**` 与 C 端 `/api/app/auth/**` 分离，并由 Gateway 转发给 RBAC Auth；业务请求携带的是由 Auth 签发的 opaque
+Bearer Token。Gateway 每个受保护请求调用 Auth 校验令牌后，
 再恢复主账号和当前用户上下文，不采信外部 `X-Tenant-Id` 或 `X-User-Id`。Dubbo Triple 使用现有明文 RPC 连接，不启用 JWT、JWKS
 或 mTLS。
 
@@ -49,32 +51,34 @@ mvn -q -f /Users/ianqian/IdeaProjects/ddd/ian-ddd-gateway/gateway-app/pom.xml sp
 ### 开户与登录示例
 
 ```bash
-curl -X POST http://127.0.0.1:8092/platform/accounts \
+curl -X POST http://127.0.0.1:8092/api/admin/platform/accounts \
   -H 'Content-Type: application/json' \
   -H "X-Platform-Token: $PLATFORM_ADMIN_TOKEN" \
   -d '{"username":"root","password":"高强度主账号密码","displayName":"示例主账号"}'
 
-LOGIN_RESPONSE=$(curl -s -X POST http://127.0.0.1:8092/auth/login \
+LOGIN_RESPONSE=$(curl -s -X POST http://127.0.0.1:8092/api/admin/auth/login \
   -H 'Content-Type: application/json' \
   -d '{"loginName":"root@主账号ID.com","password":"高强度主账号密码"}' \
 )
 ACCESS_TOKEN=$(printf '%s' "$LOGIN_RESPONSE" | jq -r '.data.accessToken')
 REFRESH_TOKEN=$(printf '%s' "$LOGIN_RESPONSE" | jq -r '.data.refreshToken')
 curl -H "Authorization: Bearer $ACCESS_TOKEN" \
-  "http://127.0.0.1:8092/api/rbac/users?pageNum=1&pageSize=20"
+  "http://127.0.0.1:8092/api/admin/rbac/users?pageNum=1&pageSize=20"
 
-curl -s -X POST http://127.0.0.1:8092/auth/refresh \
+curl -s -X POST http://127.0.0.1:8092/api/admin/auth/refresh \
   -H 'Content-Type: application/json' \
   -d "{\"refreshToken\":\"$REFRESH_TOKEN\"}"
 ```
 
-业务请求需在 `Authorization` 请求头中携带 `Bearer <accessToken>`，Refresh Token 只提交给 `/auth/refresh`，不放入 URL
-或业务请求头。
-`/auth/logout`、`/auth/logout-all`、`/auth/sessions` 和 `/auth/sessions/{sessionId}` 用于退出和设备会话管理。
+管理端业务接口固定使用 `/api/admin/**`，C 端业务接口固定使用 `/api/app/**`。两端请求均在 `Authorization` 请求头中携带
+`Bearer <accessToken>`，Refresh Token 只提交给各自的 `/api/admin/auth/refresh` 或 `/api/app/auth/refresh`，不放入 URL
+或业务请求头。注销和设备会话接口也分别位于两端的 `/auth/**` 子路径；C 端不建立逐用户 RBAC，最终授权由业务服务按可信
+`customerId`、资源归属和有效绑定完成。
 
 ### 渠道 HMAC 请求
 
-`/api/integration/**` 不使用 Bearer Token。渠道必须为每个请求提供以下五个请求头：
+`/api/external/**` 只使用请求级 HMAC，不提供 Bearer Token 降级。渠道必须为每个请求提供以下五个请求头，认证通过后的固定
+授权范围为 `external:access`：
 
 ```http
 X-Channel-Code: ch_xxx

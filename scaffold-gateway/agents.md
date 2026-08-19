@@ -13,6 +13,11 @@
 - 所有环境变量占位符必须通过 Archetype 集成测试确认生成结果正确。
 - 生成工程只转发 `X-Platform-Token`，平台凭据由 Provider 校验；租户边界来自 Auth 校验后的可信身份。Gateway 不连接 Redis、
   不保存 Session 或平台令牌，Dubbo Triple 使用明文 RPC，注册中心凭据仍通过环境变量注入。
+- HTTP API 固定使用 `/api/admin/**`、`/api/app/**`、`/api/external/**` 三类前缀；旧路径不保留兼容。
+- Admin/App 认证入口分别位于 `/api/admin/auth/**`、`/api/app/auth/**`，App 注册通过 `ICustomerService`；网关只做主体与分区粗粒度隔离，
+  C 端业务仍由 Provider 校验 customer binding 与资源归属。
+- External 使用渠道 HMAC 与固定 `external:access` scope；平台账号创建仅转发 `X-Platform-Token`，不接受普通 Admin Bearer
+  代替。
 
 ## 提交前检查
 

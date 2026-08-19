@@ -50,7 +50,7 @@ class GatewayAuthHttpIntegrationTest {
 
     @Test
     void shouldReturnUnifiedUnauthorizedResponseWithRequestId() throws Exception {
-        HttpResponse<String> response = request("/api/test/context", null, "request-001");
+        HttpResponse<String> response = request("/api/admin/test/context", null, "request-001");
 
         assertEquals(401, response.statusCode());
         assertTrue(response.headers().firstValue("Content-Type").orElseThrow().contains("application/json"));
@@ -64,7 +64,7 @@ class GatewayAuthHttpIntegrationTest {
         when(authClient.validate("opaque-token")).thenThrow(new AppException(
                 Constants.ResponseCode.AUTH_UNAVAILABLE.getCode(), Constants.ResponseCode.AUTH_UNAVAILABLE.getInfo()));
 
-        HttpResponse<String> response = request("/api/test/context", "opaque-token", "request-002");
+        HttpResponse<String> response = request("/api/admin/test/context", "opaque-token", "request-002");
 
         assertEquals(503, response.statusCode());
         assertTrue(response.headers().firstValue("Content-Type").orElseThrow().contains("application/json"));
@@ -78,7 +78,7 @@ class GatewayAuthHttpIntegrationTest {
                 Constants.ResponseCode.AUTH_RATE_LIMITED.getCode(),
                 Constants.ResponseCode.AUTH_RATE_LIMITED.getInfo()));
 
-        HttpResponse<String> response = request("/api/test/context", "rate-limited-token", "request-429");
+        HttpResponse<String> response = request("/api/admin/test/context", "rate-limited-token", "request-429");
 
         assertEquals(429, response.statusCode());
         assertEquals("request-429", response.headers().firstValue("X-Request-Id").orElseThrow());
@@ -88,10 +88,11 @@ class GatewayAuthHttpIntegrationTest {
     @Test
     void shouldPropagateValidatedIdentityAndRequestId() throws Exception {
         when(authClient.validate("opaque-token")).thenReturn(AuthIdentityDTO.builder()
+                .subjectType("ADMIN_SUB_ACCOUNT").subjectId("200").tokenKind("OPAQUE")
                 .accountId(100L).userId(200L).username("operator").userType("SUB_ACCOUNT")
                 .sessionId("session-1").build());
 
-        HttpResponse<String> response = request("/api/test/context", "opaque-token", "request-003");
+        HttpResponse<String> response = request("/api/admin/test/context", "opaque-token", "request-003");
 
         assertEquals(200, response.statusCode());
         assertTrue(response.headers().firstValue("Content-Type").orElseThrow().contains("application/json"));
@@ -115,7 +116,7 @@ class GatewayAuthHttpIntegrationTest {
     @RestController
     static class ContextController {
 
-        @GetMapping("/api/test/context")
+        @GetMapping("/api/admin/test/context")
         RequestContext context() {
             return cn.iantech.context.core.ContextAccessor.current().orElseThrow();
         }

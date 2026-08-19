@@ -13,7 +13,7 @@ import static cn.iantech.gateway.model.GatewayResponses.success;
 
 @Validated
 @RestController
-@RequestMapping("/api/rbac")
+@RequestMapping("/api/admin/rbac")
 public class RbacRelationController {
 
     private final GatewayRbacClient rbacClient;

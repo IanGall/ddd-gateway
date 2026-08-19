@@ -16,7 +16,7 @@ import static cn.iantech.gateway.model.GatewayResponses.success;
 
 @Validated
 @RestController
-@RequestMapping("/api/rbac/users")
+@RequestMapping("/api/admin/rbac/users")
 public class RbacUserController {
 
     private final GatewayRbacClient rbacClient;

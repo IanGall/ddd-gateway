@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import static ${package}.model.GatewayResponses.success;
 
 @RestController
-@RequestMapping("/platform/accounts")
+@RequestMapping("/api/admin/platform/accounts")
 public class PlatformAccountController {
     private final GatewayPlatformAccountClient platformAccountClient;
 
