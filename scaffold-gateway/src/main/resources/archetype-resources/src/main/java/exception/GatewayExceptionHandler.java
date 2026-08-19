@@ -87,6 +87,9 @@ public class GatewayExceptionHandler {
         if (Constants.ResponseCode.AUTH_REFRESH_BUSY.getCode().equals(code)) {
             return HttpStatus.CONFLICT;
         }
+        if (Constants.ResponseCode.AUTH_RATE_LIMITED.getCode().equals(code)) {
+            return HttpStatus.TOO_MANY_REQUESTS;
+        }
         if (Constants.ResponseCode.AUTH_UNAVAILABLE.getCode().equals(code)
                 || Constants.ResponseCode.RPC_NO_PROVIDER.getCode().equals(code)) {
             return HttpStatus.SERVICE_UNAVAILABLE;

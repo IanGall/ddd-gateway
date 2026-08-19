@@ -4,13 +4,8 @@ dubbo:
     parameters:
       ssl-enabled: false
   registry:
-    address: ${symbol_dollar}{DUBBO_REGISTRY_ADDRESS:nacos://127.0.0.1:8848}
-    username: ${symbol_dollar}{DUBBO_REGISTRY_USERNAME:nacos}
-    password: ${symbol_dollar}{DUBBO_REGISTRY_PASSWORD:nacos-password}
+    address: ${symbol_dollar}{DUBBO_REGISTRY_ADDRESS}
+    username: ${symbol_dollar}{DUBBO_REGISTRY_USERNAME}
+    password: ${symbol_dollar}{DUBBO_REGISTRY_PASSWORD}
     use-as-config-center: false
     use-as-metadata-center: false
-
-gateway:
-  security:
-    platform:
-      token: ${symbol_dollar}{PLATFORM_ADMIN_TOKEN:dev-platform-token-change-me}

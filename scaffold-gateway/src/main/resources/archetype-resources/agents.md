@@ -9,6 +9,6 @@
 - RPC 异常必须由 `GatewayAuthClient` 转换为 `AppException`/`AUTH_UNAVAILABLE`，认证过滤器委托 `HandlerExceptionResolver`
   ，统一由 `GatewayExceptionHandler` 按 `Constants.ResponseCode` 输出状态码和 `data=null`；禁止手写 JSON、解析
   `GenericException` 或复制状态码映射。
-- `PLATFORM_ADMIN_TOKEN` 仅用于平台创建主账号，禁止进入租户 RBAC 权限体系。
+- `X-Platform-Token` 仅转发给 `IPlatformAccountService`，Gateway 禁止保存或校验，且不得进入租户 RBAC 权限体系。
 - Dubbo Triple 消费端使用明文 RPC，注册中心凭据通过环境变量注入。
 - 新增代码和注释使用中文，优先复用 `ddd-common`。

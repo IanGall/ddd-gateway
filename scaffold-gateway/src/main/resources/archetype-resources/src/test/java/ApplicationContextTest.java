@@ -21,9 +21,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {
         "dubbo.registry.address=N/A",
+        "dubbo.registry.username=test-user",
+        "dubbo.registry.password=test-password",
         "dubbo.config-center.address=N/A",
-        "dubbo.consumer.init=false",
-        "gateway.security.platform.token=test-platform-token"
+        "dubbo.consumer.init=false"
 })
 class ApplicationContextTest {
 

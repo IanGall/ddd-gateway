@@ -12,13 +12,12 @@ ian-ddd-gateway/
 
 ### 启动前准备
 
-生产环境必须通过环境变量注入注册中心和平台级开户令牌：
+所有环境必须通过环境变量注入注册中心凭据：
 
 ```bash
 export DUBBO_REGISTRY_ADDRESS='nacos://127.0.0.1:8848'
 export DUBBO_REGISTRY_USERNAME='nacos-user'
 export DUBBO_REGISTRY_PASSWORD='从密钥管理系统读取'
-export PLATFORM_ADMIN_TOKEN='从密钥管理系统读取的高强度令牌'
 ```
 
 同时启动 `ian-ddd-archetype-std` 并发布 `cn.iantech.api.IAuthService:1.0.0`。
@@ -29,7 +28,8 @@ export PLATFORM_ADMIN_TOKEN='从密钥管理系统读取的高强度令牌'
 原样传递语义码，Gateway 能区分令牌失效等业务失败与 Auth 服务不可用等基础设施故障。Gateway 的认证过滤器只负责把异常交给
 Spring MVC 的统一异常解析器，不手写 JSON，也不分析 Dubbo 异常文本。
 
-`POST /platform/accounts` 只接受 `X-Platform-Token`，生产环境未配置 `PLATFORM_ADMIN_TOKEN` 时应用拒绝启动。登录、刷新、注销和会话管理
+`POST /platform/accounts` 只负责把 `X-Platform-Token` 和开户字段封装为强类型 RPC 请求；平台凭据由标准服务 Provider
+最终校验，Gateway 不保存、不比较该凭据。Provider 未配置 `PLATFORM_ADMIN_TOKEN` 时拒绝启动。登录、刷新、注销和会话管理
 均由 Gateway 转发给 RBAC Auth；业务请求携带的是由 Auth 签发的 opaque Bearer Token。Gateway 每个受保护请求调用 Auth 校验令牌后，
 再恢复主账号和当前用户上下文，不采信外部 `X-Tenant-Id` 或 `X-User-Id`。Dubbo Triple 使用现有明文 RPC 连接，不启用 JWT、JWKS
 或 mTLS。
@@ -80,6 +80,7 @@ HTTP 错误统一返回 `{"code","info","data"}`，并保留 `X-Request-Id`。�
 | `AUTH_REQUIRED`                       |         401 |
 | `ACCESS_DENIED`                       |         403 |
 | `AUTH_REFRESH_BUSY`                   |         409 |
+| `AUTH_RATE_LIMITED`                   |         429 |
 | 其他明确业务异常                      |         422 |
 | `RPC_ERROR`                           |         502 |
 | `AUTH_UNAVAILABLE`、`RPC_NO_PROVIDER` |         503 |

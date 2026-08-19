@@ -10,8 +10,7 @@ import org.springframework.boot.test.context.SpringBootTest;
                 "dubbo.registry.username=test-user",
                 "dubbo.registry.password=test-password",
                 "dubbo.config-center.address=N/A",
-                "dubbo.consumer.init=false",
-                "gateway.security.platform.token=test-platform-token"
+                "dubbo.consumer.init=false"
         })
 class ApplicationContextTest {
 

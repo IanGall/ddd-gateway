@@ -1,11 +1,6 @@
 package cn.iantech.gateway.model;
 
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 
 import java.util.List;
 
@@ -16,14 +11,14 @@ public final class RbacWebRequests {
 
     public record CreateUser(
             @NotBlank(message = "用户名不能为空") @Size(max = 64, message = "用户名长度不能超过64") String username,
-            @NotBlank(message = "密码不能为空") @Size(min = 8, max = 128, message = "密码长度必须为8到128位") String password,
+            @NotBlank(message = "密码不能为空") @Size(min = 8, max = 72, message = "密码长度必须为8到72位") String password,
             @Size(max = 128, message = "显示名长度不能超过128") String displayName,
             @Email(message = "邮箱格式不正确") @Size(max = 128, message = "邮箱长度不能超过128") String email,
             @Size(max = 32, message = "手机号长度不能超过32") String mobile,
             Boolean status) { }
 
     public record UpdateUser(
-            @Size(min = 8, max = 128, message = "密码长度必须为8到128位") String password,
+            @Size(min = 8, max = 72, message = "密码长度必须为8到72位") String password,
             @Size(max = 128, message = "显示名长度不能超过128") String displayName,
             @Email(message = "邮箱格式不正确") @Size(max = 128, message = "邮箱长度不能超过128") String email,
             @Size(max = 32, message = "手机号长度不能超过32") String mobile,
@@ -42,7 +37,7 @@ public final class RbacWebRequests {
             Boolean status) { }
 
     public record CreatePermission(
-            @NotBlank(message = "权限编码不能为空") @Size(max = 128, message = "权限编码长度不能超过128") String permCode,
+            @NotBlank(message = "权限编码不能为空") @Size(max = 64, message = "权限编码长度不能超过64") String permCode,
             @NotBlank(message = "权限名称不能为空") @Size(max = 128, message = "权限名称长度不能超过128") String permName,
             @NotNull(message = "权限类型不能为空") Integer permType,
             Long parentId,
@@ -51,7 +46,6 @@ public final class RbacWebRequests {
             Boolean status) { }
 
     public record UpdatePermission(
-            @NotBlank(message = "权限编码不能为空") @Size(max = 128, message = "权限编码长度不能超过128") String permCode,
             @NotBlank(message = "权限名称不能为空") @Size(max = 128, message = "权限名称长度不能超过128") String permName,
             @NotNull(message = "权限类型不能为空") Integer permType,
             Long parentId,

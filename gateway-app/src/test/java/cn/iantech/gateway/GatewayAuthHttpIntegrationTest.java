@@ -29,9 +29,10 @@ import static org.mockito.Mockito.when;
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         properties = {
                 "dubbo.registry.address=N/A",
+                "dubbo.registry.username=test-user",
+                "dubbo.registry.password=test-password",
                 "dubbo.config-center.address=N/A",
-                "dubbo.consumer.init=false",
-                "gateway.security.platform.token=test-platform-token"
+                "dubbo.consumer.init=false"
         })
 @Import(GatewayAuthHttpIntegrationTest.ContextController.class)
 class GatewayAuthHttpIntegrationTest {
@@ -69,6 +70,19 @@ class GatewayAuthHttpIntegrationTest {
         assertTrue(response.headers().firstValue("Content-Type").orElseThrow().contains("application/json"));
         assertEquals("request-002", response.headers().firstValue("X-Request-Id").orElseThrow());
         assertTrue(response.body().contains("\"code\":\"AUTH_UNAVAILABLE\""));
+    }
+
+    @Test
+    void shouldReturnUnifiedAuthRateLimitedResponse() throws Exception {
+        when(authClient.validate("rate-limited-token")).thenThrow(new AppException(
+                Constants.ResponseCode.AUTH_RATE_LIMITED.getCode(),
+                Constants.ResponseCode.AUTH_RATE_LIMITED.getInfo()));
+
+        HttpResponse<String> response = request("/api/test/context", "rate-limited-token", "request-429");
+
+        assertEquals(429, response.statusCode());
+        assertEquals("request-429", response.headers().firstValue("X-Request-Id").orElseThrow());
+        assertTrue(response.body().contains("\"code\":\"AUTH_RATE_LIMITED\""));
     }
 
     @Test

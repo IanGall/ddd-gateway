@@ -1,12 +1,7 @@
 package cn.iantech.gateway.controller;
 
 import cn.iantech.api.IRbacService;
-import cn.iantech.api.model.rbac.CreateRbacPermissionReq;
-import cn.iantech.api.model.rbac.DeleteRbacPermissionReq;
-import cn.iantech.api.model.rbac.QueryRbacPermissionPageReq;
-import cn.iantech.api.model.rbac.RbacPermissionDTO;
-import cn.iantech.api.model.rbac.RbacPermissionPageDTO;
-import cn.iantech.api.model.rbac.UpdateRbacPermissionReq;
+import cn.iantech.api.model.rbac.*;
 import cn.iantech.common.model.Response;
 import cn.iantech.gateway.model.RbacWebRequests;
 import jakarta.validation.Valid;
@@ -16,15 +11,7 @@ import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import static cn.iantech.gateway.model.GatewayResponses.success;
 
@@ -61,7 +48,7 @@ public class RbacPermissionController {
             @Min(value = 1, message = "页码必须大于0") @RequestParam(defaultValue = "1") Integer pageNum,
             @Min(value = 1, message = "页大小必须大于0") @Max(value = 100, message = "页大小不能超过100")
             @RequestParam(defaultValue = "20") Integer pageSize,
-            @Size(max = 128, message = "权限编码长度不能超过128") @RequestParam(required = false) String permCode,
+            @Size(max = 64, message = "权限编码长度不能超过64") @RequestParam(required = false) String permCode,
             @Size(max = 128, message = "权限名称长度不能超过128") @RequestParam(required = false) String permName,
             @RequestParam(required = false) Integer permType,
             @RequestParam(required = false) Long parentId,
@@ -84,7 +71,6 @@ public class RbacPermissionController {
             @Valid @RequestBody RbacWebRequests.UpdatePermission request) {
         UpdateRbacPermissionReq rpcRequest = UpdateRbacPermissionReq.builder()
                 .id(id)
-                .permCode(request.permCode())
                 .permName(request.permName())
                 .permType(request.permType())
                 .parentId(request.parentId())

@@ -43,6 +43,15 @@ class GatewayExceptionHandlerTest {
         assertEquals(Constants.ResponseCode.AUTH_UNAVAILABLE.getCode(), response.getBody().getCode());
     }
 
+    @Test
+    void shouldMapAuthRateLimitedToTooManyRequests() {
+        ResponseEntity<Response<Void>> response = handler.handleAppException(
+                new AppException(Constants.ResponseCode.AUTH_RATE_LIMITED.getCode()));
+
+        assertEquals(HttpStatus.TOO_MANY_REQUESTS, response.getStatusCode());
+        assertEquals(Constants.ResponseCode.AUTH_RATE_LIMITED.getCode(), response.getBody().getCode());
+    }
+
     // 验证未由 Auth 客户端归一化的 Dubbo 异常返回 502
     @Test
     void shouldMapRpcExceptionToBadGateway() {

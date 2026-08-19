@@ -4,8 +4,8 @@
 
 ## 启动
 
-开发环境可直接启动，生产环境必须设置 `DUBBO_REGISTRY_ADDRESS`、`DUBBO_REGISTRY_USERNAME`、`DUBBO_REGISTRY_PASSWORD` 和
-`PLATFORM_ADMIN_TOKEN`。Access Token、Refresh Token 与 Session 均由 RBAC Auth 服务保存，Gateway 不连接 Redis。
+所有环境必须设置 `DUBBO_REGISTRY_ADDRESS`、`DUBBO_REGISTRY_USERNAME` 和 `DUBBO_REGISTRY_PASSWORD`。Access Token、 Refresh
+Token 与 Session 均由 RBAC Auth 服务保存，Gateway 不连接 Redis。
 
 ```bash
 mvn spring-boot:run
@@ -33,8 +33,11 @@ curl -s -X POST http://127.0.0.1:8092/auth/refresh \
 `DELETE /auth/sessions/{sessionId}` 用于管理设备会话，均要求有效 Access Token。
 
 生成网关只信任 Auth 返回的身份，并恢复主账号 ID、当前用户 ID 和本地用户名，不信任外部 `X-Tenant-Id`、`X-User-Id`。
-`POST /platform/accounts` 由 `X-Platform-Token` 保护，用于创建主账号。Dubbo Triple 消费端使用明文 RPC，注册中心通过
+`POST /platform/accounts` 用于创建主账号。Gateway 只把 `X-Platform-Token` 和开户字段转发给独立的
+`IPlatformAccountService`，平台凭据由 Provider 最终校验，Gateway 不保存或比较凭据。Dubbo Triple 消费端使用明文 RPC， 注册中心通过
 Nacos 用户名密码认证。
+
+登录限流或临时锁定统一返回 `AUTH_RATE_LIMITED` 和 HTTP 429，不暴露具体触发条件。
 
 认证 RPC 的异常由 `GatewayAuthClient` 沿 cause 链保留 `AppException`，未声明的 RPC 失败统一转换为
 `AUTH_UNAVAILABLE`。过滤器将异常委托给唯一的 `GatewayExceptionHandler`，由 `Constants.ResponseCode` 统一决定 HTTP 状态和

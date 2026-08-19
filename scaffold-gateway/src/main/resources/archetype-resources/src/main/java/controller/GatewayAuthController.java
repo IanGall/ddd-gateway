@@ -109,7 +109,8 @@ public class GatewayAuthController {
 
     public record LoginRequest(
             @NotBlank(message = "登录名不能为空") String loginName,
-            @NotBlank(message = "密码不能为空") String password,
+            @NotBlank(message = "密码不能为空")
+            @Size(min = 8, max = 72, message = "密码长度必须为8到72位") String password,
             @Size(max = 32, message = "客户端类型长度不能超过32") String clientType,
             @Size(max = 128, message = "设备ID长度不能超过128") String deviceId) {
     }

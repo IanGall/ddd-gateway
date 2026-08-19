@@ -56,6 +56,15 @@ class GatewayExceptionHandlerTest {
     }
 
     @Test
+    void shouldMapAuthRateLimitedToTooManyRequests() {
+        ResponseEntity<Response<Void>> response = handler.handleAppException(
+                new AppException(Constants.ResponseCode.AUTH_RATE_LIMITED.getCode()));
+
+        assertEquals(HttpStatus.TOO_MANY_REQUESTS, response.getStatusCode());
+        assertEquals(Constants.ResponseCode.AUTH_RATE_LIMITED.getCode(), response.getBody().getCode());
+    }
+
+    @Test
     void shouldMapValidationToBadRequest() {
         ResponseEntity<Response<Void>> response = handler.handleValidationException(
                 new ConstraintViolationException("参数错误", Set.of()));
