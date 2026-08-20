@@ -76,13 +76,13 @@ class ApplicationContextTest {
     @Test
     void appRegisterAndLoginShouldUseDedicatedRoutes() throws IOException, InterruptedException {
         HttpResponse<String> register = postJson("/api/app/auth/register",
-                "{\"mobile\":\"13800138000\",\"password\":\"test-password\",\"displayName\":\"测试用户\"}", null);
+                "{\"loginName\":\"13800138000\",\"password\":\"test-password\",\"displayName\":\"测试用户\"}", null);
         HttpResponse<String> login = postJson("/api/app/auth/login",
-                "{\"mobile\":\"13800138000\",\"password\":\"test-password\"}", null);
+                "{\"loginName\":\"13800138000\",\"password\":\"test-password\"}", null);
 
-        assertEquals(200, register.statusCode());
+        assertEquals(200, register.statusCode(), register.body());
         assertTrue(register.body().contains("13800138000"));
-        assertEquals(200, login.statusCode());
+        assertEquals(200, login.statusCode(), login.body());
         assertTrue(login.body().contains(APP_ACCESS_TOKEN));
     }
 
