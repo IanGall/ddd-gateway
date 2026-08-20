@@ -179,10 +179,10 @@ class ApplicationContextTest {
     static class FakeGatewayCustomerClient extends GatewayCustomerClient {
 
         @Override
-        public CustomerUserDTO register(String mobile, String password, String displayName) {
+        public CustomerUserDTO register(String loginName, String password, String displayName) {
             CustomerUserDTO customer = new CustomerUserDTO();
             customer.setId(3001L);
-            customer.setMobile(mobile);
+            customer.setLoginName(loginName);
             customer.setDisplayName(displayName);
             customer.setStatus(true);
             return customer;

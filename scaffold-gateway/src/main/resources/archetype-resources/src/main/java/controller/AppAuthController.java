@@ -33,7 +33,7 @@ public class AppAuthController {
 
     @PostMapping("/register")
     public Response<CustomerUserDTO> register(@Valid @RequestBody AuthWebModels.AppRegisterRequest request) {
-        return success(customerClient.register(request.mobile(), request.password(), request.displayName()));
+        return success(customerClient.register(request.loginName(), request.password(), request.displayName()));
     }
 
     @PostMapping("/login")
@@ -41,7 +41,7 @@ public class AppAuthController {
             @Valid @RequestBody AuthWebModels.AppLoginRequest request,
             HttpServletRequest servletRequest) {
         CustomerLoginReq login = new CustomerLoginReq();
-        login.setMobile(request.mobile());
+        login.setLoginName(request.loginName());
         login.setPassword(request.password());
         login.setClientType(limited(request.clientType(), 32));
         login.setDeviceId(limited(request.deviceId(), 128));

@@ -16,9 +16,9 @@ public class GatewayCustomerClient {
     @DubboReference(version = "1.0.0", protocol = "tri", timeout = 10000, retries = 0, check = false)
     private ICustomerService customerService;
 
-    public CustomerUserDTO register(String mobile, String password, String displayName) {
+    public CustomerUserDTO register(String loginName, String password, String displayName) {
         try {
-            return customerService.register(mobile, password, displayName);
+            return customerService.register(loginName, password, displayName);
         } catch (RuntimeException exception) {
             throw GatewayRpcExceptionTranslator.translate(exception, AUTH_UNAVAILABLE);
         }

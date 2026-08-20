@@ -21,7 +21,7 @@ public final class AuthWebModels {
     }
 
     public record AppLoginRequest(
-            @NotBlank(message = "手机号不能为空") @Size(max = 32, message = "手机号长度不能超过32") String mobile,
+            @NotBlank(message = "登录账号不能为空") @Size(max = 64, message = "登录账号长度不能超过64") String loginName,
             @NotBlank(message = "密码不能为空")
             @Size(min = 8, max = 72, message = "密码长度必须为8到72位") String password,
             @Size(max = 32, message = "客户端类型长度不能超过32") String clientType,
@@ -36,7 +36,7 @@ public final class AuthWebModels {
     }
 
     public record RegisterRequest(
-            @NotBlank(message = "手机号不能为空") @Size(max = 32, message = "手机号长度不能超过32") String mobile,
+            @NotBlank(message = "登录账号不能为空") @Size(max = 64, message = "登录账号长度不能超过64") String loginName,
             @NotBlank(message = "密码不能为空")
             @Size(min = 8, max = 72, message = "密码长度必须为8到72位") String password,
             @Size(max = 128, message = "昵称长度不能超过128") String displayName) {
