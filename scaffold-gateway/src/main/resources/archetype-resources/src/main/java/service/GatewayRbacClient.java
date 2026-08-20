@@ -11,7 +11,7 @@ import static cn.iantech.common.constant.Constants.ResponseCode.RPC_ERROR;
 
 /** 网关到标准工程的平台主账号 RPC 客户端。 */
 @Component
-public class GatewayPlatformAccountClient {
+public class GatewayRbacClient {
 
     @DubboReference(version = "1.0.0", protocol = "tri", timeout = 10000, retries = 0, check = false)
     private IPlatformAccountService platformAccountService;

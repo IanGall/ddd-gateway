@@ -3,7 +3,7 @@ package ${package}.controller;
 import cn.iantech.api.model.rbac.PlatformCreateAccountReq;
 import cn.iantech.api.model.rbac.RbacAccountDTO;
 import cn.iantech.common.model.Response;
-import ${package}.service.GatewayPlatformAccountClient;
+import ${package}.service.GatewayRbacClient;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -15,9 +15,9 @@ import static ${package}.model.GatewayResponses.success;
 @RestController
 @RequestMapping("/api/admin/platform/accounts")
 public class PlatformAccountController {
-    private final GatewayPlatformAccountClient platformAccountClient;
+    private final GatewayRbacClient platformAccountClient;
 
-    public PlatformAccountController(GatewayPlatformAccountClient platformAccountClient) {
+    public PlatformAccountController(GatewayRbacClient platformAccountClient) {
         this.platformAccountClient = platformAccountClient;
     }
 

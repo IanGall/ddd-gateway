@@ -3,7 +3,7 @@ package ${package}.controller;
 import cn.iantech.api.model.rbac.PlatformCreateAccountReq;
 import cn.iantech.api.model.rbac.RbacAccountDTO;
 import cn.iantech.common.model.Response;
-import ${package}.service.GatewayPlatformAccountClient;
+import ${package}.service.GatewayRbacClient;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
@@ -17,7 +17,7 @@ class PlatformAccountControllerTest {
 
     @Test
     void shouldForwardPlatformTokenAndAccountFieldsToProvider() {
-        GatewayPlatformAccountClient client = mock(GatewayPlatformAccountClient.class);
+        GatewayRbacClient client = mock(GatewayRbacClient.class);
         RbacAccountDTO account = RbacAccountDTO.builder().accountId(1001L).username("root").build();
         when(client.createAccount(any())).thenReturn(account);
         PlatformAccountController controller = new PlatformAccountController(client);

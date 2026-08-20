@@ -16,15 +16,15 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-class GatewayChannelAuthClientTest {
+class GatewayChannelClientTest {
 
     private IChannelAuthService service;
-    private GatewayChannelAuthClient client;
+    private GatewayChannelClient client;
 
     @BeforeEach
     void setUp() {
         service = mock(IChannelAuthService.class);
-        client = new GatewayChannelAuthClient();
+        client = new GatewayChannelClient();
         ReflectionTestUtils.setField(client, "channelAuthService", service);
     }
 

@@ -1,6 +1,7 @@
 package ${package}.service;
 
 import cn.iantech.api.IAuthService;
+import cn.iantech.api.ICustomerService;
 import cn.iantech.api.model.auth.AuthIdentityDTO;
 import cn.iantech.api.model.auth.AuthLoginReq;
 import cn.iantech.api.model.auth.AuthLogoutAllReq;
@@ -12,6 +13,7 @@ import cn.iantech.api.model.auth.AuthSessionQueryReq;
 import cn.iantech.api.model.auth.AuthTokenDTO;
 import cn.iantech.api.model.auth.AuthValidateReq;
 import cn.iantech.api.model.customer.CustomerLoginReq;
+import cn.iantech.api.model.customer.CustomerUserDTO;
 import ${package}.exception.GatewayRpcExceptionTranslator;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.stereotype.Component;
@@ -27,6 +29,13 @@ public class GatewayAuthClient {
 
     @DubboReference(version = "1.0.0", protocol = "tri", timeout = 10000, retries = 0, check = false)
     private IAuthService authService;
+
+    @DubboReference(version = "1.0.0", protocol = "tri", timeout = 10000, retries = 0, check = false)
+    private ICustomerService customerService;
+
+    public CustomerUserDTO register(String loginName, String password, String displayName) {
+        return invoke(() -> customerService.register(loginName, password, displayName));
+    }
 
     public AuthTokenDTO login(AuthLoginReq request) {
         return invoke(() -> authService.login(request));

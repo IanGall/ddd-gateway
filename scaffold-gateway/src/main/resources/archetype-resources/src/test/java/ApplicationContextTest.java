@@ -5,7 +5,6 @@ import cn.iantech.api.model.auth.AuthTokenDTO;
 import cn.iantech.api.model.customer.CustomerLoginReq;
 import cn.iantech.api.model.customer.CustomerUserDTO;
 import ${package}.service.GatewayAuthClient;
-import ${package}.service.GatewayCustomerClient;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -114,11 +113,6 @@ class ApplicationContextTest {
             return new FakeGatewayAuthClient();
         }
 
-        @Bean
-        @Primary
-        GatewayCustomerClient customerClient() {
-            return new FakeGatewayCustomerClient();
-        }
     }
 
     static class FakeGatewayAuthClient extends GatewayAuthClient {
@@ -174,9 +168,6 @@ class ApplicationContextTest {
                     .identity(customerIdentity)
                     .build();
         }
-    }
-
-    static class FakeGatewayCustomerClient extends GatewayCustomerClient {
 
         @Override
         public CustomerUserDTO register(String loginName, String password, String displayName) {

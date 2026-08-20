@@ -8,7 +8,6 @@ import cn.iantech.api.model.customer.CustomerUserDTO;
 import cn.iantech.common.model.Response;
 import cn.iantech.gateway.model.AuthWebModels;
 import cn.iantech.gateway.service.GatewayAuthClient;
-import cn.iantech.gateway.service.GatewayCustomerClient;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Size;
@@ -27,16 +26,14 @@ import static cn.iantech.gateway.model.GatewayResponses.success;
 public class AppAuthController {
 
     private final GatewayAuthClient authClient;
-    private final GatewayCustomerClient customerClient;
 
-    public AppAuthController(GatewayAuthClient authClient, GatewayCustomerClient customerClient) {
+    public AppAuthController(GatewayAuthClient authClient) {
         this.authClient = authClient;
-        this.customerClient = customerClient;
     }
 
     @PostMapping("/register")
     public Response<CustomerUserDTO> register(@Valid @RequestBody AuthWebModels.RegisterRequest request) {
-        return success(customerClient.register(request.loginName(), request.password(), request.displayName()));
+        return success(authClient.register(request.loginName(), request.password(), request.displayName()));
     }
 
     @PostMapping("/login")

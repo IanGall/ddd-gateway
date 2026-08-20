@@ -9,7 +9,7 @@ import cn.iantech.context.core.ContextScope;
 import cn.iantech.context.core.ContextValidator;
 import cn.iantech.context.core.RequestContext;
 import cn.iantech.gateway.service.GatewayAuthClient;
-import cn.iantech.gateway.service.GatewayChannelAuthClient;
+import cn.iantech.gateway.service.GatewayChannelClient;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -39,7 +39,7 @@ public class GatewayAuthFilter extends OncePerRequestFilter {
     public static final String REQUEST_ID_HEADER = "X-Request-Id";
 
     private final GatewayAuthClient authClient;
-    private final GatewayChannelAuthClient channelAuthClient;
+    private final GatewayChannelClient channelAuthClient;
     private final HandlerExceptionResolver handlerExceptionResolver;
 
     public GatewayAuthFilter(GatewayAuthClient authClient,
@@ -48,7 +48,7 @@ public class GatewayAuthFilter extends OncePerRequestFilter {
     }
 
     @Autowired
-    public GatewayAuthFilter(GatewayAuthClient authClient, GatewayChannelAuthClient channelAuthClient,
+    public GatewayAuthFilter(GatewayAuthClient authClient, GatewayChannelClient channelAuthClient,
                              @Qualifier("handlerExceptionResolver") HandlerExceptionResolver handlerExceptionResolver) {
         this.authClient = authClient;
         this.channelAuthClient = channelAuthClient;

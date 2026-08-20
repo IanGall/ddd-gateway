@@ -1,8 +1,10 @@
 package cn.iantech.gateway.service;
 
 import cn.iantech.api.IAuthService;
+import cn.iantech.api.ICustomerService;
 import cn.iantech.api.model.auth.*;
 import cn.iantech.api.model.customer.CustomerLoginReq;
+import cn.iantech.api.model.customer.CustomerUserDTO;
 import cn.iantech.gateway.exception.GatewayRpcExceptionTranslator;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.stereotype.Component;
@@ -20,6 +22,13 @@ public class GatewayAuthClient {
 
     @DubboReference(version = "1.0.0", protocol = "tri", timeout = 10000, retries = 0, check = false)
     private IAuthService authService;
+
+    @DubboReference(version = "1.0.0", protocol = "tri", timeout = 10000, retries = 0, check = false)
+    private ICustomerService customerService;
+
+    public CustomerUserDTO register(String loginName, String password, String displayName) {
+        return invokeCustomer(() -> customerService.register(loginName, password, displayName));
+    }
 
     public AuthTokenDTO login(AuthLoginReq request) {
         return invoke(() -> authService.login(request));
@@ -65,6 +74,14 @@ public class GatewayAuthClient {
     private void invoke(Runnable invocation) {
         try {
             invocation.run();
+        } catch (RuntimeException exception) {
+            throw GatewayRpcExceptionTranslator.translate(exception, AUTH_UNAVAILABLE);
+        }
+    }
+
+    private <T> T invokeCustomer(Supplier<T> invocation) {
+        try {
+            return invocation.get();
         } catch (RuntimeException exception) {
             throw GatewayRpcExceptionTranslator.translate(exception, AUTH_UNAVAILABLE);
         }

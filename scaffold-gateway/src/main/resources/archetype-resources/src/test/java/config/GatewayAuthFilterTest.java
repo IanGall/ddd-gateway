@@ -6,7 +6,7 @@ import cn.iantech.common.exception.AppException;
 import cn.iantech.context.core.ContextAccessor;
 import cn.iantech.context.core.RequestContext;
 import ${package}.service.GatewayAuthClient;
-import ${package}.service.GatewayChannelAuthClient;
+import ${package}.service.GatewayChannelClient;
 import jakarta.servlet.FilterChain;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -149,7 +149,7 @@ class GatewayAuthFilterTest {
     @Test
     void shouldAuthenticateExternalRequestAndKeepBodyReadable() throws Exception {
         GatewayAuthClient authClient = mock(GatewayAuthClient.class);
-        GatewayChannelAuthClient channelAuthClient = mock(GatewayChannelAuthClient.class);
+        GatewayChannelClient channelAuthClient = mock(GatewayChannelClient.class);
         when(channelAuthClient.authenticate(any())).thenReturn(AuthIdentityDTO.builder()
                 .subjectType("PLATFORM_CLIENT").subjectId("ch_abcdefghijklmnopqrstuv")
                 .clientId("ch_abcdefghijklmnopqrstuv").tokenKind("CHANNEL_HMAC")
@@ -178,7 +178,7 @@ class GatewayAuthFilterTest {
     @Test
     void shouldAcceptExternalRootAndTrailingSlash() throws Exception {
         GatewayAuthClient authClient = mock(GatewayAuthClient.class);
-        GatewayChannelAuthClient channelAuthClient = mock(GatewayChannelAuthClient.class);
+        GatewayChannelClient channelAuthClient = mock(GatewayChannelClient.class);
         when(channelAuthClient.authenticate(any())).thenReturn(AuthIdentityDTO.builder()
                 .subjectType("PLATFORM_CLIENT").subjectId("ch_abcdefghijklmnopqrstuv")
                 .clientId("ch_abcdefghijklmnopqrstuv").tokenKind("CHANNEL_HMAC")

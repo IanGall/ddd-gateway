@@ -1,5 +1,6 @@
 package cn.iantech.gateway.service;
 
+import cn.iantech.api.IPlatformAccountService;
 import cn.iantech.api.IRbacService;
 import cn.iantech.api.model.rbac.*;
 import cn.iantech.gateway.exception.GatewayRpcExceptionTranslator;
@@ -18,6 +19,13 @@ public class GatewayRbacClient {
 
     @DubboReference(version = "1.0.0", protocol = "tri", timeout = 10000, retries = 0, check = false)
     private IRbacService rbacService;
+
+    @DubboReference(version = "1.0.0", protocol = "tri", timeout = 10000, retries = 0, check = false)
+    private IPlatformAccountService platformAccountService;
+
+    public RbacAccountDTO createAccount(PlatformCreateAccountReq request) {
+        return invoke(() -> platformAccountService.createAccount(request));
+    }
 
     public RbacUserDTO createUser(CreateRbacUserReq request) {
         return invoke(() -> rbacService.createUser(request));

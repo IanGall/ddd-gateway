@@ -7,7 +7,6 @@ import cn.iantech.api.model.auth.AuthTokenDTO;
 import cn.iantech.common.exception.AppException;
 import cn.iantech.gateway.model.AuthWebModels;
 import cn.iantech.gateway.service.GatewayAuthClient;
-import cn.iantech.gateway.service.GatewayCustomerClient;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -23,7 +22,7 @@ class AppAuthControllerTest {
     void shouldFixCustomerSubjectWhenRefreshing() {
         GatewayAuthClient authClient = mock(GatewayAuthClient.class);
         when(authClient.refresh(any())).thenReturn(token());
-        AppAuthController controller = new AppAuthController(authClient, mock(GatewayCustomerClient.class));
+        AppAuthController controller = new AppAuthController(authClient);
 
         controller.refresh(new AuthWebModels.RefreshRequest("refresh-token", "mobile", "device"),
                 new MockHttpServletRequest());
@@ -37,7 +36,7 @@ class AppAuthControllerTest {
     void shouldRejectAdminIdentityReturnedToAppEndpoint() {
         GatewayAuthClient authClient = mock(GatewayAuthClient.class);
         when(authClient.refresh(any())).thenReturn(token("ADMIN_PRIMARY"));
-        AppAuthController controller = new AppAuthController(authClient, mock(GatewayCustomerClient.class));
+        AppAuthController controller = new AppAuthController(authClient);
 
         assertThrows(AppException.class, () -> controller.refresh(
                 new AuthWebModels.RefreshRequest("refresh-token", "mobile", "device"),
