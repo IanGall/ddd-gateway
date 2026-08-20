@@ -7,6 +7,7 @@ import cn.iantech.common.exception.AppException;
 import org.apache.dubbo.rpc.RpcException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentMatchers;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -28,7 +29,7 @@ class GatewayAuthClientTest {
     @Test
     void shouldPropagateAppExceptionWithoutChangingIdentity() {
         AppException expected = new AppException(Constants.ResponseCode.AUTH_REQUIRED.getCode(), "令牌无效");
-        when(authService.login(org.mockito.ArgumentMatchers.any(AuthLoginReq.class))).thenThrow(expected);
+        when(authService.login(ArgumentMatchers.any(AuthLoginReq.class))).thenThrow(expected);
 
         AppException actual = assertThrows(AppException.class,
                 () -> client.login(AuthLoginReq.builder().loginName("user").password("password").build()));
@@ -38,7 +39,7 @@ class GatewayAuthClientTest {
 
     @Test
     void shouldNormalizeRpcTimeoutToGatewayTimeout() {
-        when(authService.login(org.mockito.ArgumentMatchers.any(AuthLoginReq.class)))
+        when(authService.login(ArgumentMatchers.any(AuthLoginReq.class)))
                 .thenThrow(new RpcException(RpcException.TIMEOUT_EXCEPTION, "timeout"));
 
         AppException actual = assertThrows(AppException.class,
@@ -51,7 +52,7 @@ class GatewayAuthClientTest {
 
     @Test
     void shouldNormalizeUnexpectedRuntimeExceptionToAuthUnavailable() {
-        when(authService.login(org.mockito.ArgumentMatchers.any(AuthLoginReq.class)))
+        when(authService.login(ArgumentMatchers.any(AuthLoginReq.class)))
                 .thenThrow(new IllegalStateException("unexpected"));
 
         AppException actual = assertThrows(AppException.class,
@@ -63,7 +64,7 @@ class GatewayAuthClientTest {
     @Test
     void shouldPropagateAppExceptionFromRuntimeCauseChain() {
         AppException expected = new AppException(Constants.ResponseCode.AUTH_REQUIRED.getCode(), "令牌无效");
-        when(authService.login(org.mockito.ArgumentMatchers.any(AuthLoginReq.class)))
+        when(authService.login(ArgumentMatchers.any(AuthLoginReq.class)))
                 .thenThrow(new IllegalStateException("rpc wrapper", expected));
 
         AppException actual = assertThrows(AppException.class,

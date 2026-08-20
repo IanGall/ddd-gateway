@@ -14,6 +14,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
@@ -23,6 +24,7 @@ import org.springframework.web.servlet.HandlerExceptionResolver;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.UUID;
 
 /**
@@ -45,7 +47,7 @@ public class GatewayAuthFilter extends OncePerRequestFilter {
         this(authClient, null, handlerExceptionResolver);
     }
 
-    @org.springframework.beans.factory.annotation.Autowired
+    @Autowired
     public GatewayAuthFilter(GatewayAuthClient authClient, GatewayChannelAuthClient channelAuthClient,
                              @Qualifier("handlerExceptionResolver") HandlerExceptionResolver handlerExceptionResolver) {
         this.authClient = authClient;
@@ -206,7 +208,7 @@ public class GatewayAuthFilter extends OncePerRequestFilter {
                 || path.indexOf(';') >= 0 || path.contains("//")) {
             return null;
         }
-        boolean unsafeSegment = java.util.Arrays.stream(path.split("/", -1))
+        boolean unsafeSegment = Arrays.stream(path.split("/", -1))
                 .anyMatch(segment -> ".".equals(segment) || "..".equals(segment));
         return unsafeSegment ? null : path;
     }

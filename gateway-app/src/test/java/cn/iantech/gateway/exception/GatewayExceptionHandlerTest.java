@@ -3,9 +3,12 @@ package cn.iantech.gateway.exception;
 import cn.iantech.common.constant.Constants;
 import cn.iantech.common.exception.AppException;
 import cn.iantech.common.model.Response;
+import jakarta.validation.ConstraintViolationException;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -72,7 +75,7 @@ class GatewayExceptionHandlerTest {
     @Test
     void shouldMapValidationExceptionToBadRequest() {
         ResponseEntity<Response<Void>> response = handler.handleValidationException(
-                new jakarta.validation.ConstraintViolationException("参数错误", java.util.Set.of()));
+                new ConstraintViolationException("参数错误", Set.of()));
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertEquals(Constants.ResponseCode.INVALID_ARGUMENT.getCode(), response.getBody().getCode());

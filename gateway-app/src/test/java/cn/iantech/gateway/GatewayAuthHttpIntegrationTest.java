@@ -3,6 +3,7 @@ package cn.iantech.gateway;
 import cn.iantech.api.model.auth.AuthIdentityDTO;
 import cn.iantech.common.constant.Constants;
 import cn.iantech.common.exception.AppException;
+import cn.iantech.context.core.ContextAccessor;
 import cn.iantech.context.core.RequestContext;
 import cn.iantech.gateway.config.GatewayAuthFilter;
 import cn.iantech.gateway.service.GatewayAuthClient;
@@ -118,7 +119,7 @@ class GatewayAuthHttpIntegrationTest {
 
         @GetMapping("/api/admin/test/context")
         RequestContext context() {
-            return cn.iantech.context.core.ContextAccessor.current().orElseThrow();
+            return ContextAccessor.current().orElseThrow();
         }
     }
 }
