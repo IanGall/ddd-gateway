@@ -159,7 +159,7 @@ class GatewayAuthFilterTest {
 
         verifyNoInteractions(authClient);
         assertEquals("{\"orderId\":1}", forwardedBody.get());
-        assertEquals("CLIENT", context.get().subjectType());
+        assertEquals("PLATFORM_CLIENT", context.get().subjectType());
         assertEquals("external:access", context.get().authorizedScope());
     }
 
@@ -255,8 +255,8 @@ class GatewayAuthFilterTest {
     }
 
     private AuthIdentityDTO clientIdentity() {
-        return AuthIdentityDTO.builder().subjectType("CLIENT").subjectId("ch_abcdefghijklmnopqrstuv")
+        return AuthIdentityDTO.builder().subjectType("PLATFORM_CLIENT").subjectId("ch_abcdefghijklmnopqrstuv")
                 .clientId("ch_abcdefghijklmnopqrstuv").tokenKind("CHANNEL_HMAC")
-                .ownerAccountId(100L).credentialVersion(1L).authorizedScope("external:access").build();
+                .credentialVersion(1L).authorizedScope("external:access").build();
     }
 }

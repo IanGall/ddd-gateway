@@ -11,13 +11,14 @@ import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import java.util.List;
 
 import static ${package}.model.GatewayResponses.success;
 
 /** 管理主体维护所属账号下的渠道长期凭证。 */
 @Validated
 @RestController
-@RequestMapping("/api/admin/channel-credentials")
+@RequestMapping("/api/admin/platform/channel-credentials")
 public class ChannelCredentialController {
 
     private final GatewayChannelCredentialClient channelCredentialClient;
@@ -78,5 +79,19 @@ public class ChannelCredentialController {
     public Response<Boolean> delete(
             @Positive(message = "渠道凭证ID必须大于0") @PathVariable Long id) {
         return success(channelCredentialClient.delete(DeleteChannelCredentialReq.builder().id(id).build()));
+    }
+
+    @GetMapping("/{id}/data-scopes/{scopeType}")
+    public Response<List<ChannelDataScopeDTO>> queryDataScopes(@PathVariable Long id, @PathVariable String scopeType) {
+        return success(channelCredentialClient.queryDataScopes(QueryChannelDataScopesReq.builder()
+                .channelId(id).scopeType(scopeType).build()));
+    }
+
+    @PutMapping("/{id}/data-scopes/{scopeType}")
+    public Response<List<ChannelDataScopeDTO>> replaceDataScopes(
+            @PathVariable Long id, @PathVariable String scopeType,
+            @Valid @RequestBody ChannelCredentialWebRequests.ReplaceScopes request) {
+        return success(channelCredentialClient.replaceDataScopes(ReplaceChannelDataScopesReq.builder()
+                .channelId(id).scopeType(scopeType).scopeValues(request.scopeValues()).build()));
     }
 }

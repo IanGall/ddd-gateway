@@ -151,9 +151,9 @@ class GatewayAuthFilterTest {
         GatewayAuthClient authClient = mock(GatewayAuthClient.class);
         GatewayChannelAuthClient channelAuthClient = mock(GatewayChannelAuthClient.class);
         when(channelAuthClient.authenticate(any())).thenReturn(AuthIdentityDTO.builder()
-                .subjectType("CLIENT").subjectId("ch_abcdefghijklmnopqrstuv")
+                .subjectType("PLATFORM_CLIENT").subjectId("ch_abcdefghijklmnopqrstuv")
                 .clientId("ch_abcdefghijklmnopqrstuv").tokenKind("CHANNEL_HMAC")
-                .ownerAccountId(100L).credentialVersion(1L).authorizedScope("external:access").build());
+                .credentialVersion(1L).authorizedScope("external:access").build());
         HandlerExceptionResolver resolver = mock(HandlerExceptionResolver.class);
         GatewayAuthFilter filter = new GatewayAuthFilter(authClient, channelAuthClient, resolver);
         byte[] body = "{\"orderId\":1}".getBytes(StandardCharsets.UTF_8);
@@ -170,7 +170,7 @@ class GatewayAuthFilterTest {
         verify(channelAuthClient).authenticate(argThat(rpc -> rpc.getCanonicalRequest().split("\\n", -1).length == 8));
         verifyNoInteractions(authClient);
         assertEquals("{\"orderId\":1}", forwardedBody.get());
-        assertEquals("100", context.get().ownerAccountId());
+        assertNull(context.get().ownerAccountId());
         assertEquals("external:access", context.get().authorizedScope());
         assertEquals("1", context.get().credentialVersion());
     }
@@ -180,9 +180,9 @@ class GatewayAuthFilterTest {
         GatewayAuthClient authClient = mock(GatewayAuthClient.class);
         GatewayChannelAuthClient channelAuthClient = mock(GatewayChannelAuthClient.class);
         when(channelAuthClient.authenticate(any())).thenReturn(AuthIdentityDTO.builder()
-                .subjectType("CLIENT").subjectId("ch_abcdefghijklmnopqrstuv")
+                .subjectType("PLATFORM_CLIENT").subjectId("ch_abcdefghijklmnopqrstuv")
                 .clientId("ch_abcdefghijklmnopqrstuv").tokenKind("CHANNEL_HMAC")
-                .ownerAccountId(100L).credentialVersion(1L).authorizedScope("external:access").build());
+                .credentialVersion(1L).authorizedScope("external:access").build());
         GatewayAuthFilter filter = new GatewayAuthFilter(authClient, channelAuthClient, resolvedExceptionResolver());
 
         for (String path : new String[]{"/api/external", "/api/external/"}) {

@@ -6,6 +6,7 @@ import cn.iantech.gateway.exception.GatewayRpcExceptionTranslator;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.function.Supplier;
 
 import static cn.iantech.common.constant.Constants.ResponseCode.RPC_ERROR;
@@ -45,6 +46,14 @@ public class GatewayChannelCredentialClient {
 
     public Boolean delete(DeleteChannelCredentialReq request) {
         return invoke(() -> channelCredentialService.delete(request));
+    }
+
+    public List<ChannelDataScopeDTO> queryDataScopes(QueryChannelDataScopesReq request) {
+        return invoke(() -> channelCredentialService.queryDataScopes(request));
+    }
+
+    public List<ChannelDataScopeDTO> replaceDataScopes(ReplaceChannelDataScopesReq request) {
+        return invoke(() -> channelCredentialService.replaceDataScopes(request));
     }
 
     private <T> T invoke(Supplier<T> invocation) {

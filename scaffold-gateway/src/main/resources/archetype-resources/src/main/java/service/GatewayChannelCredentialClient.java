@@ -5,6 +5,7 @@ import cn.iantech.api.model.channel.*;
 import ${package}.exception.GatewayRpcExceptionTranslator;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.stereotype.Component;
+import java.util.List;
 
 import java.util.function.Supplier;
 
@@ -51,5 +52,13 @@ public class GatewayChannelCredentialClient {
         } catch (RuntimeException exception) {
             throw GatewayRpcExceptionTranslator.translate(exception, RPC_ERROR);
         }
+    }
+
+    public List<ChannelDataScopeDTO> queryDataScopes(QueryChannelDataScopesReq request) {
+        return invoke(() -> channelCredentialService.queryDataScopes(request));
+    }
+
+    public List<ChannelDataScopeDTO> replaceDataScopes(ReplaceChannelDataScopesReq request) {
+        return invoke(() -> channelCredentialService.replaceDataScopes(request));
     }
 }

@@ -228,7 +228,7 @@ public class GatewayAuthFilter extends OncePerRequestFilter {
             case ADMIN -> "ADMIN_PRIMARY".equals(identity.getSubjectType())
                     || "ADMIN_SUB_ACCOUNT".equals(identity.getSubjectType());
             case APP -> "CUSTOMER".equals(identity.getSubjectType());
-            case EXTERNAL -> "CLIENT".equals(identity.getSubjectType())
+            case EXTERNAL -> "PLATFORM_CLIENT".equals(identity.getSubjectType())
                     && "CHANNEL_HMAC".equals(identity.getTokenKind());
             default -> false;
         };
@@ -245,8 +245,8 @@ public class GatewayAuthFilter extends OncePerRequestFilter {
                             && "OPAQUE".equals(identity.getTokenKind());
             case "CUSTOMER" -> identity.getUserId() != null && !isBlank(identity.getSessionId())
                     && "OPAQUE".equals(identity.getTokenKind());
-            case "CLIENT" -> !isBlank(identity.getClientId()) && "CHANNEL_HMAC".equals(identity.getTokenKind())
-                    && identity.getOwnerAccountId() != null && identity.getCredentialVersion() != null
+            case "PLATFORM_CLIENT" -> !isBlank(identity.getClientId()) && "CHANNEL_HMAC".equals(identity.getTokenKind())
+                    && identity.getOwnerAccountId() == null && identity.getCredentialVersion() != null
                     && "external:access".equals(identity.getAuthorizedScope());
             default -> false;
         };
