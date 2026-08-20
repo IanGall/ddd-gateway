@@ -4,9 +4,13 @@ import cn.iantech.api.IChannelAuthService;
 import cn.iantech.api.IChannelCredentialService;
 import cn.iantech.api.model.auth.AuthIdentityDTO;
 import cn.iantech.api.model.channel.*;
+import cn.iantech.common.constant.Constants;
 import cn.iantech.gateway.exception.GatewayRpcExceptionTranslator;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
+import java.util.function.Supplier;
 
 import static cn.iantech.common.constant.Constants.ResponseCode.AUTH_UNAVAILABLE;
 
@@ -58,19 +62,19 @@ public class GatewayChannelClient {
         return invokeCredential(() -> channelCredentialService.delete(request));
     }
 
-    public java.util.List<ChannelDataScopeDTO> queryDataScopes(QueryChannelDataScopesReq request) {
+    public List<ChannelDataScopeDTO> queryDataScopes(QueryChannelDataScopesReq request) {
         return invokeCredential(() -> channelCredentialService.queryDataScopes(request));
     }
 
-    public java.util.List<ChannelDataScopeDTO> replaceDataScopes(ReplaceChannelDataScopesReq request) {
+    public List<ChannelDataScopeDTO> replaceDataScopes(ReplaceChannelDataScopesReq request) {
         return invokeCredential(() -> channelCredentialService.replaceDataScopes(request));
     }
 
-    private <T> T invokeCredential(java.util.function.Supplier<T> invocation) {
+    private <T> T invokeCredential(Supplier<T> invocation) {
         try {
             return invocation.get();
         } catch (RuntimeException exception) {
-            throw GatewayRpcExceptionTranslator.translate(exception, cn.iantech.common.constant.Constants.ResponseCode.RPC_ERROR);
+            throw GatewayRpcExceptionTranslator.translate(exception, Constants.ResponseCode.RPC_ERROR);
         }
     }
 }
