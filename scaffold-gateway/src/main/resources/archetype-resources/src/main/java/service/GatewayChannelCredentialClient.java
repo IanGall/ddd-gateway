@@ -1,32 +1,17 @@
 package ${package}.service;
 
-import cn.iantech.api.IChannelAuthService;
 import cn.iantech.api.IChannelCredentialService;
-import cn.iantech.api.model.auth.AuthIdentityDTO;
 import cn.iantech.api.model.channel.*;
 import ${package}.exception.GatewayRpcExceptionTranslator;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.stereotype.Component;
 
-import static cn.iantech.common.constant.Constants.ResponseCode.AUTH_UNAVAILABLE;
-
-/** 网关到渠道认证服务的单次 RPC 适配器。 */
+/** 网关到渠道凭证管理服务的 RPC 适配器。 */
 @Component
-public class GatewayChannelClient {
-
-    @DubboReference(version = "1.0.0", protocol = "tri", timeout = 10000, retries = 0, check = false)
-    private IChannelAuthService channelAuthService;
+public class GatewayChannelCredentialClient {
 
     @DubboReference(version = "1.0.0", protocol = "tri", timeout = 10000, retries = 0, check = false)
     private IChannelCredentialService channelCredentialService;
-
-    public AuthIdentityDTO authenticate(ChannelSignatureVerifyReq request) {
-        try {
-            return channelAuthService.authenticate(request);
-        } catch (RuntimeException exception) {
-            throw GatewayRpcExceptionTranslator.translate(exception, AUTH_UNAVAILABLE);
-        }
-    }
 
     public ChannelCredentialSecretDTO create(CreateChannelCredentialReq request) { return invokeCredential(() -> channelCredentialService.create(request)); }
     public ChannelCredentialPageDTO queryPage(QueryChannelCredentialPageReq request) { return invokeCredential(() -> channelCredentialService.queryPage(request)); }

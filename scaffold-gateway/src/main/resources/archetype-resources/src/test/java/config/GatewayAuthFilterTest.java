@@ -6,7 +6,6 @@ import cn.iantech.common.exception.AppException;
 import cn.iantech.context.core.ContextAccessor;
 import cn.iantech.context.core.RequestContext;
 import ${package}.service.GatewayAuthClient;
-import ${package}.service.GatewayChannelClient;
 import jakarta.servlet.FilterChain;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -149,13 +148,12 @@ class GatewayAuthFilterTest {
     @Test
     void shouldAuthenticateExternalRequestAndKeepBodyReadable() throws Exception {
         GatewayAuthClient authClient = mock(GatewayAuthClient.class);
-        GatewayChannelClient channelAuthClient = mock(GatewayChannelClient.class);
-        when(channelAuthClient.authenticate(any())).thenReturn(AuthIdentityDTO.builder()
+        when(authClient.authenticateChannel(any())).thenReturn(AuthIdentityDTO.builder()
                 .subjectType("PLATFORM_CLIENT").subjectId("ch_abcdefghijklmnopqrstuv")
                 .clientId("ch_abcdefghijklmnopqrstuv").tokenKind("CHANNEL_HMAC")
                 .credentialVersion(1L).authorizedScope("external:access").build());
         HandlerExceptionResolver resolver = mock(HandlerExceptionResolver.class);
-        GatewayAuthFilter filter = new GatewayAuthFilter(authClient, channelAuthClient, resolver);
+        GatewayAuthFilter filter = new GatewayAuthFilter(authClient, resolver);
         byte[] body = "{\"orderId\":1}".getBytes(StandardCharsets.UTF_8);
         MockHttpServletRequest request = signedRequest("POST", "/api/external/orders", body);
         AtomicReference<RequestContext> context = new AtomicReference<>();
@@ -167,8 +165,7 @@ class GatewayAuthFilterTest {
 
         filter.doFilter(request, new MockHttpServletResponse(), chain);
 
-        verify(channelAuthClient).authenticate(argThat(rpc -> rpc.getCanonicalRequest().split("\\n", -1).length == 8));
-        verifyNoInteractions(authClient);
+        verify(authClient).authenticateChannel(argThat(rpc -> rpc.getCanonicalRequest().split("\\n", -1).length == 8));
         assertEquals("{\"orderId\":1}", forwardedBody.get());
         assertNull(context.get().ownerAccountId());
         assertEquals("external:access", context.get().authorizedScope());
@@ -178,20 +175,18 @@ class GatewayAuthFilterTest {
     @Test
     void shouldAcceptExternalRootAndTrailingSlash() throws Exception {
         GatewayAuthClient authClient = mock(GatewayAuthClient.class);
-        GatewayChannelClient channelAuthClient = mock(GatewayChannelClient.class);
-        when(channelAuthClient.authenticate(any())).thenReturn(AuthIdentityDTO.builder()
+        when(authClient.authenticateChannel(any())).thenReturn(AuthIdentityDTO.builder()
                 .subjectType("PLATFORM_CLIENT").subjectId("ch_abcdefghijklmnopqrstuv")
                 .clientId("ch_abcdefghijklmnopqrstuv").tokenKind("CHANNEL_HMAC")
                 .credentialVersion(1L).authorizedScope("external:access").build());
-        GatewayAuthFilter filter = new GatewayAuthFilter(authClient, channelAuthClient, resolvedExceptionResolver());
+        GatewayAuthFilter filter = new GatewayAuthFilter(authClient, resolvedExceptionResolver());
 
         for (String path : new String[]{"/api/external", "/api/external/"}) {
             FilterChain chain = mock(FilterChain.class);
             filter.doFilter(signedRequest("GET", path, new byte[0]), new MockHttpServletResponse(), chain);
             verify(chain).doFilter(any(), any());
         }
-        verifyNoInteractions(authClient);
-        verify(channelAuthClient, times(2)).authenticate(any());
+        verify(authClient, times(2)).authenticateChannel(any());
     }
 
     private void assertBearerDecision(String path, AuthIdentityDTO identity, boolean allowed) throws Exception {

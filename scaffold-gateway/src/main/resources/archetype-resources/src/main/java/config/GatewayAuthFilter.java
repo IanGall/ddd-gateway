@@ -9,7 +9,6 @@ import cn.iantech.context.core.ContextScope;
 import cn.iantech.context.core.ContextValidator;
 import cn.iantech.context.core.RequestContext;
 import ${package}.service.GatewayAuthClient;
-import ${package}.service.GatewayChannelClient;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -37,19 +36,11 @@ public class GatewayAuthFilter extends OncePerRequestFilter {
     public static final String REQUEST_ID_HEADER = "X-Request-Id";
 
     private final GatewayAuthClient authClient;
-    private final GatewayChannelClient channelAuthClient;
     private final HandlerExceptionResolver handlerExceptionResolver;
 
     public GatewayAuthFilter(GatewayAuthClient authClient,
                              @Qualifier("handlerExceptionResolver") HandlerExceptionResolver handlerExceptionResolver) {
-        this(authClient, null, handlerExceptionResolver);
-    }
-
-    @org.springframework.beans.factory.annotation.Autowired
-    public GatewayAuthFilter(GatewayAuthClient authClient, GatewayChannelClient channelAuthClient,
-                             @Qualifier("handlerExceptionResolver") HandlerExceptionResolver handlerExceptionResolver) {
         this.authClient = authClient;
-        this.channelAuthClient = channelAuthClient;
         this.handlerExceptionResolver = handlerExceptionResolver;
     }
 
@@ -118,11 +109,6 @@ public class GatewayAuthFilter extends OncePerRequestFilter {
 
     private void authenticateExternal(HttpServletRequest request, HttpServletResponse response,
                                       FilterChain filterChain, String requestId) throws IOException, ServletException {
-        if (channelAuthClient == null) {
-            resolveException(request, response, new AppException(Constants.ResponseCode.AUTH_UNAVAILABLE.getCode(),
-                    Constants.ResponseCode.AUTH_UNAVAILABLE.getInfo()));
-            return;
-        }
         try {
             CachedBodyHttpServletRequest wrapped = new CachedBodyHttpServletRequest(request,
                     ChannelCanonicalRequest.MAX_BODY_BYTES);
@@ -133,7 +119,7 @@ public class GatewayAuthFilter extends OncePerRequestFilter {
             rpcRequest.setTimestamp(material.timestamp());
             rpcRequest.setSignature(material.signature());
             rpcRequest.setCanonicalRequest(material.canonicalRequest());
-            AuthIdentityDTO identity = channelAuthClient.authenticate(rpcRequest);
+            AuthIdentityDTO identity = authClient.authenticateChannel(rpcRequest);
             if (!validIdentity(identity)) {
                 resolveException(request, response, authRequired("渠道认证失败"));
                 return;

@@ -22,7 +22,8 @@ export DUBBO_REGISTRY_PASSWORD='从密钥管理系统读取'
 
 同时启动 `ian-ddd-archetype-std` 并发布 `cn.iantech.api.IAuthService:1.0.0`。
 
-认证会话由 RBAC Auth 服务统一保存和校验，Gateway 不再连接 Redis，也不保存本地 Session。
+认证会话由 Auth 服务统一保存和校验，Gateway 不再连接 Redis，也不保存本地 Session。RBAC 与 Customer 只作为管理员和 C 端用户的
+身份校验提供方，不持有 Token 或 Session。
 
 标准服务的 `IAuthService`、`IRbacService` 和 `IUserService` 全部显式声明 `throws AppException`。这样 Dubbo 会按声明式业务异常
 原样传递语义码，Gateway 能区分令牌失效等业务失败与 Auth 服务不可用等基础设施故障。Gateway 的认证过滤器只负责把异常交给
@@ -31,7 +32,7 @@ Spring MVC 的统一异常解析器，不手写 JSON，也不分析 Dubbo 异常
 `POST /api/admin/platform/accounts` 只负责把 `X-Platform-Token` 和开户字段封装为强类型 RPC 请求；平台凭据由标准服务
 Provider
 最终校验，Gateway 不保存、不比较该凭据。Provider 未配置 `PLATFORM_ADMIN_TOKEN` 时拒绝启动。登录、刷新、注销和会话管理 按管理端
-`/api/admin/auth/**` 与 C 端 `/api/app/auth/**` 分离，并由 Gateway 转发给 RBAC Auth；业务请求携带的是由 Auth 签发的 opaque
+`/api/admin/auth/**` 与 C 端 `/api/app/auth/**` 分离，并由 Gateway 转发给 Auth；业务请求携带的是由 Auth 签发的 opaque
 Bearer Token。Gateway 每个受保护请求调用 Auth 校验令牌后，
 再恢复主账号和当前用户上下文，不采信外部 `X-Tenant-Id` 或 `X-User-Id`。Dubbo Triple 使用现有明文 RPC 连接，不启用 JWT、JWKS
 或 mTLS。
@@ -92,7 +93,9 @@ Canonical Request 依次连接大写 Method、规范化 Path、RFC 3986 排序�
 秒时间戳和原始 Body SHA-256，每项占一行；非空 JSON 的 Content-Type 固定为 `application/json`， 空 Body 的 Content-Type
 为空。签名为 `hexLower(HMAC-SHA256(channelSecret, UTF8(canonicalRequest)))`。
 
-网关限制原始 Body 最大 1 MiB，Auth 只接受当前时间前后 300 秒内的请求，并以 `channelCode + signature` 摘要在 Redis 登记 600
+网关限制原始 Body 最大 1 MiB，渠道认证 Application Service 只接受当前时间前后 300 秒内的请求，并以
+`channelCode + signature`
+摘要在 Redis 登记 600
 秒。完全相同的签名只能成功一次；重试必须更新秒级时间戳并重新签名。生产 HTTP 与 Dubbo 均不启用 TLS， HMAC
 只能提供请求认证、完整性和有限防重放，不能加密请求或响应内容。
 
@@ -123,7 +126,8 @@ curl "http://127.0.0.1:8092/actuator/health"
 ## 通用网关骨架
 
 骨架包含 Web 接入、Auth RPC 认证、参数校验、统一异常、Actuator、Dubbo Triple 消费端和 Nacos 配置。认证契约明确绑定标准工程的
-`IAuthService`，负责主账号/子账号登录、opaque Token 校验、会话管理和平台级开户；具体 RBAC 管理接口仍由业务网关自行接入，不复制到骨架中。
+`IAuthService`，统一承载用户会话认证与渠道 HMAC 认证 RPC；两套认证算法仍分别由 Auth 与 Channel Application Service 实现。
+具体 RBAC 管理接口仍由业务网关自行接入，不复制到骨架中。
 
 ### 构建与安装
 

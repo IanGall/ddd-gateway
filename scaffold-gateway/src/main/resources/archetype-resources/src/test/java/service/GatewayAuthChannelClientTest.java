@@ -1,6 +1,6 @@
 package ${package}.service;
 
-import cn.iantech.api.IChannelAuthService;
+import cn.iantech.api.IAuthService;
 import cn.iantech.api.model.channel.ChannelSignatureVerifyReq;
 import cn.iantech.common.constant.Constants;
 import cn.iantech.common.exception.AppException;
@@ -16,35 +16,35 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-class GatewayChannelClientTest {
+class GatewayAuthChannelClientTest {
 
-    private IChannelAuthService service;
-    private GatewayChannelClient client;
+    private IAuthService service;
+    private GatewayAuthClient client;
 
     @BeforeEach
     void setUp() {
-        service = mock(IChannelAuthService.class);
-        client = new GatewayChannelClient();
-        ReflectionTestUtils.setField(client, "channelAuthService", service);
+        service = mock(IAuthService.class);
+        client = new GatewayAuthClient();
+        ReflectionTestUtils.setField(client, "authService", service);
     }
 
     @Test
     void shouldPreserveAuthenticationFailure() {
         AppException expected = new AppException(Constants.ResponseCode.AUTH_REQUIRED.getCode(), "渠道认证失败");
-        when(service.authenticate(any())).thenThrow(expected);
+        when(service.authenticateChannel(any())).thenThrow(expected);
 
         AppException actual = assertThrows(AppException.class,
-                () -> client.authenticate(new ChannelSignatureVerifyReq()));
+                () -> client.authenticateChannel(new ChannelSignatureVerifyReq()));
 
         assertSame(expected, actual);
     }
 
     @Test
     void shouldMapRpcTimeout() {
-        when(service.authenticate(any())).thenThrow(new RpcException(RpcException.TIMEOUT_EXCEPTION, "timeout"));
+        when(service.authenticateChannel(any())).thenThrow(new RpcException(RpcException.TIMEOUT_EXCEPTION, "timeout"));
 
         AppException actual = assertThrows(AppException.class,
-                () -> client.authenticate(new ChannelSignatureVerifyReq()));
+                () -> client.authenticateChannel(new ChannelSignatureVerifyReq()));
 
         assertEquals(Constants.ResponseCode.RPC_TIMEOUT.getCode(), actual.getCode());
     }

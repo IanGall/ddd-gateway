@@ -5,7 +5,7 @@
 ## 启动
 
 所有环境必须设置 `DUBBO_REGISTRY_ADDRESS`、`DUBBO_REGISTRY_USERNAME` 和 `DUBBO_REGISTRY_PASSWORD`。Access Token、 Refresh
-Token 与 Session 均由 RBAC Auth 服务保存，Gateway 不连接 Redis。
+Token 与 Session 均由 Auth 服务保存，RBAC 与 Customer 作为身份校验提供方，Gateway 不连接 Redis。
 
 ```bash
 mvn spring-boot:run

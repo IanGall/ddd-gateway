@@ -3,6 +3,7 @@ package cn.iantech.gateway.service;
 import cn.iantech.api.IAuthService;
 import cn.iantech.api.ICustomerService;
 import cn.iantech.api.model.auth.*;
+import cn.iantech.api.model.channel.ChannelSignatureVerifyReq;
 import cn.iantech.api.model.customer.CustomerLoginReq;
 import cn.iantech.api.model.customer.CustomerUserDTO;
 import cn.iantech.gateway.exception.GatewayRpcExceptionTranslator;
@@ -15,7 +16,7 @@ import java.util.function.Supplier;
 import static cn.iantech.common.constant.Constants.ResponseCode.AUTH_UNAVAILABLE;
 
 /**
- * 网关到 RBAC Auth 服务的 RPC 适配器。网关不持有令牌或会话状态。
+ * 网关到 Auth 服务的 RPC 适配器。网关不持有令牌或会话状态。
  */
 @Component
 public class GatewayAuthClient {
@@ -36,6 +37,10 @@ public class GatewayAuthClient {
 
     public AuthTokenDTO customerLogin(CustomerLoginReq request) {
         return invoke(() -> authService.customerLogin(request));
+    }
+
+    public AuthIdentityDTO authenticateChannel(ChannelSignatureVerifyReq request) {
+        return invoke(() -> authService.authenticateChannel(request));
     }
 
     public AuthTokenDTO refresh(AuthRefreshReq request) {

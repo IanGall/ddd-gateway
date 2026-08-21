@@ -3,7 +3,7 @@ package ${package}.controller;
 import cn.iantech.api.model.channel.*;
 import cn.iantech.common.model.Response;
 import ${package}.model.ChannelCredentialWebRequests;
-import ${package}.service.GatewayChannelClient;
+import ${package}.service.GatewayChannelCredentialClient;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -21,9 +21,9 @@ import static ${package}.model.GatewayResponses.success;
 @RequestMapping("/api/admin/platform/channel-credentials")
 public class ChannelCredentialController {
 
-    private final GatewayChannelClient channelCredentialClient;
+    private final GatewayChannelCredentialClient channelCredentialClient;
 
-    public ChannelCredentialController(GatewayChannelClient channelCredentialClient) {
+    public ChannelCredentialController(GatewayChannelCredentialClient channelCredentialClient) {
         this.channelCredentialClient = channelCredentialClient;
     }
 

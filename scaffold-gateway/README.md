@@ -34,7 +34,8 @@ mvn archetype:generate \
 ```
 
 生成工程继承 `ddd-base` 并导入 `ddd-base-bom`，默认包含 Spring MVC、参数校验、Actuator、Dubbo Triple、Nacos、`ddd-common` 和
-标准工程 `IAuthService` 认证契约。认证和设备会话由 RBAC Auth 服务实现，Gateway 分别通过 `/api/admin/auth/**` 和
+标准工程 `IAuthService` 认证契约。认证和设备会话由 Auth 服务实现，RBAC 与 Customer 作为身份校验提供方；Gateway 分别通过
+`/api/admin/auth/**` 和
 `/api/app/auth/**` 转发认证请求，并按请求调用 Auth 校验 opaque Token；`/api/external/**` 固定使用渠道 HMAC，不复制具体 RBAC
 管理接口。
 

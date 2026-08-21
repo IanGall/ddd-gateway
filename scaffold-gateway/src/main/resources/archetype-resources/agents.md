@@ -4,7 +4,8 @@
 - 下游调用使用 Dubbo Triple，消费端默认关闭启动检查。
 - 传输对象必须定义明确的 Java 类型，不使用 Map。
 - 生产环境凭据只能通过环境变量注入，禁止提交真实密钥。
-- 主账号边界和当前用户身份必须由 RBAC Auth RPC 校验 opaque Token 后建立，禁止信任外部身份 Header。
+- 主账号边界和当前用户身份必须由 Auth RPC 校验 opaque Token 后建立；RBAC 与 Customer 仅作为身份校验提供方，禁止信任外部身份
+  Header。
 - Gateway 不生成 Token、不保存 Session、不访问 Auth Redis；Admin/App 的 `/api/*/auth/**` 仅作为 Auth RPC 的 HTTP 门面。
 - HTTP API 固定分为 `/api/admin/**`、`/api/app/**`、`/api/external/**`；App 用户不复用 Admin RBAC， Provider 必须按 customer
   binding 与资源归属完成最终授权。

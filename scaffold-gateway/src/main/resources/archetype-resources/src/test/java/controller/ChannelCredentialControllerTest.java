@@ -5,7 +5,7 @@ import cn.iantech.api.model.channel.ChannelCredentialSecretDTO;
 import cn.iantech.api.model.channel.CreateChannelCredentialReq;
 import cn.iantech.api.model.channel.QueryChannelCredentialPageReq;
 import ${package}.model.ChannelCredentialWebRequests;
-import ${package}.service.GatewayChannelClient;
+import ${package}.service.GatewayChannelCredentialClient;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
@@ -16,7 +16,7 @@ class ChannelCredentialControllerTest {
 
     @Test
     void shouldMapCreateAndPageRequestsWithoutAcceptingAccountIdentity() {
-        GatewayChannelClient client = mock(GatewayChannelClient.class);
+        GatewayChannelCredentialClient client = mock(GatewayChannelCredentialClient.class);
         when(client.create(any())).thenReturn(ChannelCredentialSecretDTO.builder()
                 .id(1L).channelCode("ch_abcdefghijklmnopqrstuv").channelSecret("secret").secretVersion(1L).build());
         when(client.queryPage(any())).thenReturn(ChannelCredentialPageDTO.builder().build());

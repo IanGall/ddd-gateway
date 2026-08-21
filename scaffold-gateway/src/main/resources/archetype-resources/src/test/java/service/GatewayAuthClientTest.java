@@ -11,6 +11,7 @@ import cn.iantech.api.model.auth.AuthSessionDTO;
 import cn.iantech.api.model.auth.AuthSessionQueryReq;
 import cn.iantech.api.model.auth.AuthTokenDTO;
 import cn.iantech.api.model.auth.AuthValidateReq;
+import cn.iantech.api.model.channel.ChannelSignatureVerifyReq;
 import cn.iantech.api.model.customer.CustomerLoginReq;
 import cn.iantech.common.constant.Constants;
 import cn.iantech.common.exception.AppException;
@@ -77,6 +78,11 @@ class GatewayAuthClientTest {
 
         @Override
         public AuthTokenDTO customerLogin(CustomerLoginReq req) {
+            throw failure;
+        }
+
+        @Override
+        public AuthIdentityDTO authenticateChannel(ChannelSignatureVerifyReq req) {
             throw failure;
         }
 

@@ -5,7 +5,6 @@ import cn.iantech.common.exception.AppException;
 import cn.iantech.context.core.ContextAccessor;
 import cn.iantech.context.core.RequestContext;
 import cn.iantech.gateway.service.GatewayAuthClient;
-import cn.iantech.gateway.service.GatewayChannelClient;
 import jakarta.servlet.FilterChain;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -144,9 +143,8 @@ class GatewayAuthFilterTest {
     @Test
     void shouldAuthenticateExternalRequestWithChannelHmac() throws Exception {
         GatewayAuthClient authClient = mock(GatewayAuthClient.class);
-        GatewayChannelClient channelAuthClient = mock(GatewayChannelClient.class);
-        when(channelAuthClient.authenticate(any())).thenReturn(clientIdentity());
-        GatewayAuthFilter filter = new GatewayAuthFilter(authClient, channelAuthClient, resolver());
+        when(authClient.authenticateChannel(any())).thenReturn(clientIdentity());
+        GatewayAuthFilter filter = new GatewayAuthFilter(authClient, resolver());
         byte[] body = "{\"orderId\":1}".getBytes(StandardCharsets.UTF_8);
         MockHttpServletRequest request = signedRequest("/api/external/orders", body);
         AtomicReference<RequestContext> context = new AtomicReference<>();
@@ -157,7 +155,7 @@ class GatewayAuthFilterTest {
             forwardedBody.set(new String(servletRequest.getInputStream().readAllBytes(), StandardCharsets.UTF_8));
         });
 
-        verifyNoInteractions(authClient);
+        verify(authClient).authenticateChannel(any());
         assertEquals("{\"orderId\":1}", forwardedBody.get());
         assertEquals("PLATFORM_CLIENT", context.get().subjectType());
         assertEquals("external:access", context.get().authorizedScope());
@@ -166,33 +164,30 @@ class GatewayAuthFilterTest {
     @Test
     void shouldAcceptExternalRootAndTrailingSlashWithHmac() throws Exception {
         GatewayAuthClient authClient = mock(GatewayAuthClient.class);
-        GatewayChannelClient channelAuthClient = mock(GatewayChannelClient.class);
-        when(channelAuthClient.authenticate(any())).thenReturn(clientIdentity());
-        GatewayAuthFilter filter = new GatewayAuthFilter(authClient, channelAuthClient, resolver());
+        when(authClient.authenticateChannel(any())).thenReturn(clientIdentity());
+        GatewayAuthFilter filter = new GatewayAuthFilter(authClient, resolver());
 
         for (String path : new String[]{"/api/external", "/api/external/"}) {
             FilterChain chain = mock(FilterChain.class);
             filter.doFilter(signedRequest(path, new byte[0]), new MockHttpServletResponse(), chain);
             verify(chain).doFilter(any(), any());
         }
-        verifyNoInteractions(authClient);
-        verify(channelAuthClient, times(2)).authenticate(any());
+        verify(authClient, times(2)).authenticateChannel(any());
     }
 
     @Test
     void shouldRejectNonClientIdentityReturnedByExternalAuthentication() throws Exception {
         for (AuthIdentityDTO identity : new AuthIdentityDTO[]{adminIdentity(), customerIdentity()}) {
             GatewayAuthClient authClient = mock(GatewayAuthClient.class);
-            GatewayChannelClient channelAuthClient = mock(GatewayChannelClient.class);
-            when(channelAuthClient.authenticate(any())).thenReturn(identity);
-            GatewayAuthFilter filter = new GatewayAuthFilter(authClient, channelAuthClient, resolver());
+            when(authClient.authenticateChannel(any())).thenReturn(identity);
+            GatewayAuthFilter filter = new GatewayAuthFilter(authClient, resolver());
             FilterChain chain = mock(FilterChain.class);
 
             filter.doFilter(signedRequest("/api/external/orders", new byte[0]),
                     new MockHttpServletResponse(), chain);
 
             verifyNoInteractions(chain);
-            verifyNoInteractions(authClient);
+            verify(authClient).authenticateChannel(any());
         }
     }
 
