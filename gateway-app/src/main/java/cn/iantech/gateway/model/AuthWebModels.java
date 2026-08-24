@@ -1,7 +1,6 @@
 package cn.iantech.gateway.model;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 /**
@@ -30,7 +29,7 @@ public final class AuthWebModels {
 
     public record RefreshRequest(
             @NotBlank(message = "刷新令牌不能为空") @Size(max = 256, message = "刷新令牌长度不能超过256")
-            @Pattern(regexp = "[A-Za-z0-9_-]+", message = "刷新令牌格式不正确") String refreshToken,
+            String refreshToken,
             @Size(max = 32, message = "客户端类型长度不能超过32") String clientType,
             @Size(max = 128, message = "设备ID长度不能超过128") String deviceId) {
     }
