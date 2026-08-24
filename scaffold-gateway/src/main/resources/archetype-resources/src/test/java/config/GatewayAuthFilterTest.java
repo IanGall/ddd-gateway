@@ -1,6 +1,7 @@
 package ${package}.config;
 
 import cn.iantech.api.model.auth.AuthIdentityDTO;
+import cn.iantech.api.model.auth.AuthSubjectTypes;
 import cn.iantech.common.constant.Constants;
 import cn.iantech.common.exception.AppException;
 import cn.iantech.context.core.ContextAccessor;
@@ -149,7 +150,7 @@ class GatewayAuthFilterTest {
     void shouldAuthenticateExternalRequestAndKeepBodyReadable() throws Exception {
         GatewayAuthClient authClient = mock(GatewayAuthClient.class);
         when(authClient.authenticateChannel(any())).thenReturn(AuthIdentityDTO.builder()
-                .subjectType("PLATFORM_CLIENT").subjectId("ch_abcdefghijklmnopqrstuv")
+                .subjectType(AuthSubjectTypes.PLATFORM_CLIENT).subjectId("ch_abcdefghijklmnopqrstuv")
                 .clientId("ch_abcdefghijklmnopqrstuv").tokenKind("CHANNEL_HMAC")
                 .credentialVersion(1L).authorizedScope("external:access").build());
         HandlerExceptionResolver resolver = mock(HandlerExceptionResolver.class);
@@ -176,7 +177,7 @@ class GatewayAuthFilterTest {
     void shouldAcceptExternalRootAndTrailingSlash() throws Exception {
         GatewayAuthClient authClient = mock(GatewayAuthClient.class);
         when(authClient.authenticateChannel(any())).thenReturn(AuthIdentityDTO.builder()
-                .subjectType("PLATFORM_CLIENT").subjectId("ch_abcdefghijklmnopqrstuv")
+                .subjectType(AuthSubjectTypes.PLATFORM_CLIENT).subjectId("ch_abcdefghijklmnopqrstuv")
                 .clientId("ch_abcdefghijklmnopqrstuv").tokenKind("CHANNEL_HMAC")
                 .credentialVersion(1L).authorizedScope("external:access").build());
         GatewayAuthFilter filter = new GatewayAuthFilter(authClient, resolvedExceptionResolver());

@@ -1,6 +1,7 @@
 package cn.iantech.gateway.config;
 
 import cn.iantech.api.model.auth.AuthIdentityDTO;
+import cn.iantech.api.model.auth.AuthSubjectTypes;
 import cn.iantech.common.exception.AppException;
 import cn.iantech.context.core.ContextAccessor;
 import cn.iantech.context.core.RequestContext;
@@ -157,7 +158,7 @@ class GatewayAuthFilterTest {
 
         verify(authClient).authenticateChannel(any());
         assertEquals("{\"orderId\":1}", forwardedBody.get());
-        assertEquals("PLATFORM_CLIENT", context.get().subjectType());
+        assertEquals(AuthSubjectTypes.PLATFORM_CLIENT, context.get().subjectType());
         assertEquals("external:access", context.get().authorizedScope());
     }
 
@@ -250,7 +251,7 @@ class GatewayAuthFilterTest {
     }
 
     private AuthIdentityDTO clientIdentity() {
-        return AuthIdentityDTO.builder().subjectType("PLATFORM_CLIENT").subjectId("ch_abcdefghijklmnopqrstuv")
+        return AuthIdentityDTO.builder().subjectType(AuthSubjectTypes.PLATFORM_CLIENT).subjectId("ch_abcdefghijklmnopqrstuv")
                 .clientId("ch_abcdefghijklmnopqrstuv").tokenKind("CHANNEL_HMAC")
                 .credentialVersion(1L).authorizedScope("external:access").build();
     }

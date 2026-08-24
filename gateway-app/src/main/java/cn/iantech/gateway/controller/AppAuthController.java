@@ -1,6 +1,5 @@
 package cn.iantech.gateway.controller;
 
-import cn.iantech.api.model.auth.AuthRefreshReq;
 import cn.iantech.api.model.auth.AuthSessionDTO;
 import cn.iantech.api.model.auth.AuthSubjectTypes;
 import cn.iantech.api.model.customer.CustomerLoginReq;
@@ -52,14 +51,8 @@ public class AppAuthController {
     @PostMapping("/refresh")
     public Response<AuthWebModels.TokenResponse> refresh(
             @Valid @RequestBody AuthWebModels.RefreshRequest request, HttpServletRequest servletRequest) {
-        return success(toResponse(requireApp(authClient.refresh(AuthRefreshReq.builder()
-                .refreshToken(request.refreshToken())
-                .expectedSubjectType(AuthSubjectTypes.CUSTOMER)
-                .clientType(limited(request.clientType(), 32))
-                .deviceId(limited(request.deviceId(), 128))
-                .ipAddress(limited(servletRequest.getRemoteAddr(), 64))
-                .userAgent(limited(servletRequest.getHeader("User-Agent"), 256))
-                .build()))));
+        return success(toResponse(requireApp(authClient.refresh(
+                refreshRequest(request, servletRequest, AuthSubjectTypes.CUSTOMER)))));
     }
 
     @PostMapping("/logout")

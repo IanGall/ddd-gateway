@@ -33,8 +33,8 @@ Spring MVC 的统一异常解析器，不手写 JSON，也不分析 Dubbo 异常
 Provider
 最终校验，Gateway 不保存、不比较该凭据。Provider 未配置 `PLATFORM_ADMIN_TOKEN` 时拒绝启动。登录、刷新、注销和会话管理 按管理端
 `/api/admin/auth/**` 与 C 端 `/api/app/auth/**` 分离，并由 Gateway 转发给 Auth；业务请求携带的是由 Auth 签发的 opaque
-Bearer Token。Gateway 每个受保护请求调用 Auth 校验令牌后，
-再恢复主账号和当前用户上下文，不采信外部 `X-Tenant-Id` 或 `X-User-Id`。Dubbo Triple 使用现有明文 RPC 连接，不启用 JWT、JWKS
+Bearer Token。Gateway 每个受保护请求调用 Auth 校验令牌后， 再恢复主账号和当前用户上下文，不采信外部 `X-Account-Id` 或
+`X-User-Id`。Dubbo Triple 使用现有明文 RPC 连接，不启用 JWT、JWKS
 或 mTLS。
 
 ### 编译与测试
@@ -93,7 +93,7 @@ Canonical Request 依次连接大写 Method、规范化 Path、RFC 3986 排序�
 秒时间戳和原始 Body SHA-256，每项占一行；非空 JSON 的 Content-Type 固定为 `application/json`， 空 Body 的 Content-Type
 为空。签名为 `hexLower(HMAC-SHA256(channelSecret, UTF8(canonicalRequest)))`。
 
-网关限制原始 Body 最大 1 MiB，渠道认证 Application Service 只接受当前时间前后 300 秒内的请求，并以
+网关限制原始 Body 最大 1 MiB，渠道认证 Cases 服务只接受当前时间前后 300 秒内的请求，并以
 `channelCode + signature`
 摘要在 Redis 登记 600
 秒。完全相同的签名只能成功一次；重试必须更新秒级时间戳并重新签名。生产 HTTP 与 Dubbo 均不启用 TLS， HMAC
@@ -126,7 +126,7 @@ curl "http://127.0.0.1:8092/actuator/health"
 ## 通用网关骨架
 
 骨架包含 Web 接入、Auth RPC 认证、参数校验、统一异常、Actuator、Dubbo Triple 消费端和 Nacos 配置。认证契约明确绑定标准工程的
-`IAuthService`，统一承载用户会话认证与渠道 HMAC 认证 RPC；两套认证算法仍分别由 Auth 与 Channel Application Service 实现。
+`IAuthService`，统一承载用户会话认证与渠道 HMAC 认证 RPC；两套认证算法仍分别由 Auth 与 Channel Cases 服务实现。
 具体 RBAC 管理接口仍由业务网关自行接入，不复制到骨架中。
 
 ### 构建与安装

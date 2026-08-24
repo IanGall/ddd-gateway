@@ -1,6 +1,7 @@
 package ${package}.controller;
 
 import cn.iantech.api.model.auth.AuthSessionDTO;
+import cn.iantech.api.model.auth.AuthSubjectTypes;
 import cn.iantech.api.model.auth.AuthTokenDTO;
 import cn.iantech.api.model.customer.CustomerLoginReq;
 import cn.iantech.api.model.customer.CustomerUserDTO;
@@ -52,7 +53,8 @@ public class AppAuthController {
     public Response<AuthWebModels.TokenResponse> refresh(
             @Valid @RequestBody AuthWebModels.RefreshRequest request,
             HttpServletRequest servletRequest) {
-        return success(toResponse(requireApp(authClient.refresh(refreshRequest(request, servletRequest, "CUSTOMER")))));
+        return success(toResponse(requireApp(authClient.refresh(
+                refreshRequest(request, servletRequest, AuthSubjectTypes.CUSTOMER)))));
     }
 
     @PostMapping("/logout")

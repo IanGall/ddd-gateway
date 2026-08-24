@@ -1,6 +1,7 @@
 package ${package}.controller;
 
 import cn.iantech.api.model.auth.AuthLoginReq;
+import cn.iantech.api.model.auth.AuthSubjectTypes;
 import cn.iantech.api.model.auth.AuthSessionDTO;
 import cn.iantech.api.model.auth.AuthTokenDTO;
 import cn.iantech.common.model.Response;
@@ -46,7 +47,8 @@ public class AdminAuthController {
     public Response<AuthWebModels.TokenResponse> refresh(
             @Valid @RequestBody AuthWebModels.RefreshRequest request,
             HttpServletRequest servletRequest) {
-        return success(toResponse(requireAdmin(authClient.refresh(refreshRequest(request, servletRequest, "ADMIN")))));
+        return success(toResponse(requireAdmin(authClient.refresh(
+                refreshRequest(request, servletRequest, AuthSubjectTypes.ADMIN)))));
     }
 
     @PostMapping("/logout")

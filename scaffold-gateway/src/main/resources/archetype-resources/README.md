@@ -34,7 +34,7 @@ curl -s -X POST http://127.0.0.1:8092/api/admin/auth/refresh \
 整个令牌族。管理端与 C 端的注销、注销全部和设备会话接口分别位于 `/api/admin/auth/**`、`/api/app/auth/**`，均要求有效 Access
 Token。
 
-生成网关只信任 Auth 返回的身份，并恢复主账号 ID、当前用户 ID 和本地用户名，不信任外部 `X-Tenant-Id`、`X-User-Id`。
+生成网关只信任 Auth 返回的身份，并恢复主账号 ID、当前用户 ID 和本地用户名，不信任外部 `X-Account-Id`、`X-User-Id`。
 `POST /api/admin/platform/accounts` 用于创建主账号。Gateway 只把 `X-Platform-Token` 和开户字段转发给独立的
 `IPlatformAccountService`，平台凭据由 Provider 最终校验，Gateway 不保存或比较凭据。Dubbo Triple 消费端使用明文 RPC， 注册中心通过
 Nacos 用户名密码认证。

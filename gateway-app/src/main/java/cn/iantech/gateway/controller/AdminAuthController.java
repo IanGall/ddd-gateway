@@ -1,7 +1,6 @@
 package cn.iantech.gateway.controller;
 
 import cn.iantech.api.model.auth.AuthLoginReq;
-import cn.iantech.api.model.auth.AuthRefreshReq;
 import cn.iantech.api.model.auth.AuthSessionDTO;
 import cn.iantech.api.model.auth.AuthSubjectTypes;
 import cn.iantech.common.model.Response;
@@ -46,14 +45,8 @@ public class AdminAuthController {
     @PostMapping("/refresh")
     public Response<AuthWebModels.TokenResponse> refresh(
             @Valid @RequestBody AuthWebModels.RefreshRequest request, HttpServletRequest servletRequest) {
-        return success(toResponse(requireAdmin(authClient.refresh(AuthRefreshReq.builder()
-                .refreshToken(request.refreshToken())
-                .expectedSubjectType(AuthSubjectTypes.ADMIN)
-                .clientType(limited(request.clientType(), 32))
-                .deviceId(limited(request.deviceId(), 128))
-                .ipAddress(limited(servletRequest.getRemoteAddr(), 64))
-                .userAgent(limited(servletRequest.getHeader("User-Agent"), 256))
-                .build()))));
+        return success(toResponse(requireAdmin(authClient.refresh(
+                refreshRequest(request, servletRequest, AuthSubjectTypes.ADMIN)))));
     }
 
     @PostMapping("/logout")

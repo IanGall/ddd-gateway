@@ -9,7 +9,7 @@
 - 通用骨架绑定标准工程 `IAuthService` 的认证契约和 `IRbacService` 的平台开户契约，不复制具体 RBAC 管理接口，也不得生成虚假的
   RPC 契约。
 - 核心领域规则必须由下游 DDD 服务实现。
-- 网关每个受保护请求通过 Auth RPC 校验 opaque Token 后建立主账号与当前用户上下文，不信任 `X-Tenant-Id`、`X-User-Id` 等外部身份
+- 网关每个受保护请求通过 Auth RPC 校验 opaque Token 后建立主账号与当前用户上下文，不信任 `X-Account-Id`、`X-User-Id` 等外部身份
   Header。
 - Dubbo Triple 消费端使用明文 RPC；网关不持有 Session、不连接 Auth Redis，不使用 JWT 或 Sa-Token 本地认证。
 

@@ -1,6 +1,7 @@
 package cn.iantech.gateway.controller;
 
 import cn.iantech.api.model.auth.AuthIdentityDTO;
+import cn.iantech.api.model.auth.AuthRefreshReq;
 import cn.iantech.api.model.auth.AuthTokenDTO;
 import cn.iantech.common.exception.AppException;
 import cn.iantech.gateway.config.GatewayAuthFilter;
@@ -34,6 +35,18 @@ final class AuthControllerSupport {
             return null;
         }
         return value.length() <= maxLength ? value : value.substring(0, maxLength);
+    }
+
+    static AuthRefreshReq refreshRequest(AuthWebModels.RefreshRequest request, HttpServletRequest servletRequest,
+                                         String expectedSubjectType) {
+        return AuthRefreshReq.builder()
+                .refreshToken(request.refreshToken())
+                .expectedSubjectType(expectedSubjectType)
+                .clientType(limited(request.clientType(), 32))
+                .deviceId(limited(request.deviceId(), 128))
+                .ipAddress(limited(servletRequest.getRemoteAddr(), 64))
+                .userAgent(limited(servletRequest.getHeader("User-Agent"), 256))
+                .build();
     }
 
     static AuthWebModels.TokenResponse toResponse(AuthTokenDTO issued) {
