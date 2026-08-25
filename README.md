@@ -136,6 +136,11 @@ mvn -f /Users/ianqian/IdeaProjects/ddd/ian-ddd-gateway/pom.xml clean verify
 mvn -f /Users/ianqian/IdeaProjects/ddd/ian-ddd-gateway/scaffold-gateway/pom.xml clean install
 ```
 
+上述 `verify` 会对每个含生产源码的模块独立执行 JaCoCo 门禁：行覆盖率不得低于 80%，分支覆盖率不得低于
+70%，且不排除启动类、配置类、请求模型或生成类。 HTML 报告位于 `target/site/jacoco/index.html`，XML 报告位于
+`target/site/jacoco/jacoco.xml`。网关 Archetype 冒烟构建也执行
+`verify`，确保生成工程遵守相同规则。
+
 ### 生成网关工程
 
 ```bash
