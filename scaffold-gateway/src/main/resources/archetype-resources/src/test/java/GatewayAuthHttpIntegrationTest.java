@@ -28,7 +28,10 @@ import static org.mockito.Mockito.when;
         "dubbo.registry.address=N/A",
         "dubbo.registry.username=test-user",
         "dubbo.registry.password=test-password",
+        "dubbo.registry.use-as-metadata-center=false",
         "dubbo.config-center.address=N/A",
+        "dubbo.application.metadata-type=local",
+        "dubbo.application.metadata-service-protocol=injvm",
         "dubbo.consumer.init=false"
 })
 @Import(GatewayAuthHttpIntegrationTest.ContextController.class)

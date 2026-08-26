@@ -12,8 +12,8 @@ dubbo:
   application:
     name: ${rootArtifactId}
     qos-enable: false
-    metadata-type: local
-    metadata-service-protocol: injvm
+    metadata-type: remote
+    metadata-service-protocol: tri
   consumer:
     check: false
 
