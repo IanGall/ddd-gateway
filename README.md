@@ -43,6 +43,10 @@ Bearer Token。Gateway 每个受保护请求调用 Auth 校验令牌后， 再�
 mvn -q -f /Users/ianqian/IdeaProjects/ddd/ian-ddd-gateway/gateway-app/pom.xml test
 ```
 
+业务流程测试只在网关层编写。`gateway-app` 通过 test scope 引入 `ddd-gateway-test-starter`，使用强类型 OpenFeign 接口、DTO、
+`BusinessFlow` 和 `FlowKey<T>` 串联登录、Token 传递与受保护接口；标准服务只保留 SQL/Dubbo N+1 检测，不编排 HTTP 流程。
+`GatewayBusinessWorkflowTest` 使用 Spring Boot 随机端口执行真实网关 HTTP 链路，并通过 `@DetectNPlusOne` 限制 Feign 调用次数。
+
 ### 启动
 
 ```bash
@@ -128,6 +132,9 @@ curl "http://127.0.0.1:8092/actuator/health"
 骨架包含 Web 接入、Auth RPC 认证、参数校验、统一异常、Actuator、Dubbo Triple 消费端和 Nacos 配置。认证契约明确绑定标准工程的
 `IAuthService`，统一承载用户会话认证与渠道 HMAC 认证 RPC；两套认证算法仍分别由 Auth 与 Channel Cases 服务实现。
 具体 RBAC 管理接口仍由业务网关自行接入，不复制到骨架中。
+
+生成工程默认包含 `GatewayBusinessWorkflowTest`，所有跨 HTTP 接口的业务流程均在该网关测试边界扩展；下游 Provider 继续通过领域、
+用例、持久化和 RPC Provider 测试验证自身行为。
 
 ### 构建与安装
 

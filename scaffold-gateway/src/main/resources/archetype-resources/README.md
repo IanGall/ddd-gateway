@@ -49,3 +49,9 @@ Nacos 用户名密码认证。
 认证 RPC 的异常由 `GatewayAuthClient` 沿 cause 链保留 `AppException`，未声明的 RPC 失败统一转换为
 `AUTH_UNAVAILABLE`。过滤器将异常委托给唯一的 `GatewayExceptionHandler`，由 `Constants.ResponseCode` 统一决定 HTTP 状态和
 `data: null` 响应；不要在过滤器或控制器中手写 JSON、解析 Dubbo `GenericException` 或重复维护状态码映射。
+
+## 业务流程测试
+
+业务流程测试只允许放在网关层。工程通过 test scope 引入 `ddd-gateway-test-starter`，`GatewayBusinessWorkflowTest` 使用强类型
+OpenFeign 接口和 DTO，在随机端口上验证登录、Token 传递及受保护接口，并通过 `@DetectNPlusOne` 约束重复 HTTP/RPC 调用。
+新增流程应继续使用 `BusinessFlow` 和 `FlowKey<T>` 编排，不使用 `Map` 传输对象，也不增加自动重试。

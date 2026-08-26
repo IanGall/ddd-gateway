@@ -75,6 +75,11 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>cn.iantech</groupId>
+            <artifactId>ddd-gateway-test-starter</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
